@@ -4,6 +4,7 @@ import AppContext from "../../../common/AppContext";
 import { Provider } from "react-redux";
 import store from "../../../common/store";
 import App from './App';
+import ExportExcel from './excel';
 export default class Bsipoc extends React.Component<IBsipocProps, {}> {
   public render(): React.ReactElement<IBsipocProps> {
     const { context } = this.props;
@@ -12,6 +13,7 @@ export default class Bsipoc extends React.Component<IBsipocProps, {}> {
       <AppContext.Provider value={{ context }}>
       <Provider store={store}>
         <App />
+        <ExportExcel></ExportExcel>
       </Provider>
     </AppContext.Provider>
     );

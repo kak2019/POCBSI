@@ -7,7 +7,7 @@ import { getSP } from "../../../common/pnpjsConfig";
 import "@pnp/sp/webs";
 import "@pnp/sp/folders";
 import { ChoiceGroup, PrimaryButton } from "office-ui-fabric-react";
-
+import * as XLSX from 'xlsx';
 
 import { Dropdown, DropdownMenuItemType, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
 
