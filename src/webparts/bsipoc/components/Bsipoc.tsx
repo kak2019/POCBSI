@@ -13,7 +13,7 @@ export default class Bsipoc extends React.Component<IBsipocProps, {}> {
       <AppContext.Provider value={{ context }}>
       <Provider store={store}>
         <App />
-        <ExportExcel></ExportExcel>
+        {/* <ExportExcel></ExportExcel> */}
       </Provider>
     </AppContext.Provider>
     );

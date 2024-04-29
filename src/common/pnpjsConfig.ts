@@ -6,8 +6,7 @@ import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/batching";
 import "@pnp/sp/folders";
-
-
+import "@pnp/sp/files";
 let _sp: SPFI = null;
 
 export const getSP = (context?: WebPartContext): SPFI => {
