@@ -5,10 +5,12 @@ import { spfi } from "@pnp/sp";
 import { getSP } from "../../../common/pnpjsConfig";
 import "@pnp/sp/webs";
 import "@pnp/sp/folders";
-import { PrimaryButton } from "office-ui-fabric-react";
+import { PrimaryButton, Stack } from "office-ui-fabric-react";
 import * as XLSX from 'xlsx';
 import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
 import ReadExcelFromSP from "./ReadExcelFromSp";
+import YearPicker from "./control/YearSelect";
+import createrFolder from "./control/CreateFolder"
 // import XlxsExcelFromSP from "./xlxsexcel"
 
 
@@ -18,24 +20,32 @@ const dropdownStyles: Partial<IDropdownStyles> = {
 
 const options: IDropdownOption[] = [
 
-  { key: '2024Q1', text: '2024Q1' },
+  { key: 'Q1', text: 'Q1' },
+  { key: 'Q2', text: 'Q2' },
+  { key: 'Q3', text: 'Q3' },
+  { key: 'Q4', text: 'Q4' },
 ];
 
 
 export default memo(function App() {
   const sp = spfi(getSP());
-  
+
 
 
   const [excel, setExcel] = React.useState([]);
   const [allCountry, setAllCountry] = React.useState([])
   const [selectedKey, setSelectedKey] = React.useState<string>('');
+  const [selectedYear, setSelectedYear] = React.useState<number | undefined>(undefined);
 
-  
+  const handleYearChange = (year: number) => {
+      setSelectedYear(year);  // 更新状态以保存选中的年份
+      console.log(`Selected year in App component: ${year}`);
+  };
+
   const onChange = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
     if (item) {
       setSelectedKey(item.key as string);
-      console.log('Selected:', item.key); 
+      console.log('Selected:', item.key);
     }
   };
 
@@ -139,6 +149,38 @@ export default memo(function App() {
       return {}
     })
 
+    // 拿period 周期对应关系
+    const period = await sp.web.lists.getByTitle("BSI_Period").renderListDataAsStream({
+      /* 字段关系如下
+      Title ===Package Name
+      field_1 = PartnerType
+      field_2 = Dealer Category
+      field_3 = Monthly Price (USD)
+      Comment = Comment
+      */
+
+      ViewXml: `<View>
+                      <ViewFields>
+                        <FieldRef Name="Title"/>
+                        <FieldRef Name="Month"/>
+                      </ViewFields>
+                   
+                    </View>`,
+      // <RowLimit>400</RowLimit>
+    }).then((response) => {
+      console.log("period", response.Row)
+      // console.log("respackage", response.Row.filter((item)=>item.field_2))
+      // if (response.Row.length > 0) {
+      //   const resObj: any = {}
+      //   response.Row.forEach(val => {
+      //     resObj[`${val.Title};${val.field_2}`] = val.field_3 * 1
+      //   })
+      //   return resObj
+      // }
+
+      return {}
+    })
+
     // 拿主表订单
     const order = await sp.web.lists.getByTitle("UD BSI_PartnerConfig").renderListDataAsStream({
       /* 字段关系如下
@@ -214,20 +256,6 @@ export default memo(function App() {
     setExcel(finalExcelData)
   }
 
-  //   const handleExport = () => {
-  //     const worksheet = XLSX.utils.json_to_sheet(excel);
-  //     ['A1','B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'N1', 'M1', 'O1', 'P1'].forEach(key => {
-  //       worksheet[key].s = {
-  //         fill: {
-  //           fgColor: { rgb: "add8e6" }
-  //         }
-  //       }
-  //     })
-  //     console.log(worksheet)
-  //     const workbook = XLSX.utils.book_new();
-  //     XLSX.utils.book_append_sheet(workbook, worksheet, "People");
-  //     XLSX.writeFile(workbook, "peopleData.xlsx");
-  // };
   // 定义上传文件的函数
   async function uploadFileToSP(libraryUrl: string, fileName: string, blob: Blob): Promise<void> {
     try {
@@ -241,7 +269,7 @@ export default memo(function App() {
   }
 
 
-  const handleExport = async ():Promise<void> => {
+  const handleExport = async (): Promise<void> => {
     // 创建一个数组来存储所有的上传Promise
     const uploadPromises: any[] = [];
 
@@ -298,27 +326,46 @@ export default memo(function App() {
   useEffect(() => {
     initData().then(res => res).catch(err => err)
   }, [])
-  
 
+  const handleCreateFolder = async () => {
+    if (!selectedYear) {
+        alert("请选择年份名称");
+        return;
+    }
+    if (!selectedKey) {
+      alert("请选择月份");
+      return;
+  }
+    try {
+        await createrFolder("/sites/proj-testspfeatures/Shared Documents", selectedYear+selectedKey);
+        alert("文件夹创建成功!");
+    } catch (error) {
+        alert("创建文件夹失败: " + error.message);
+    }
+};
 
   return (
     <>
       <h2>BSI POC</h2>
+      <Stack horizontal>
 
-      <Dropdown
-        placeholder="Select an option"
-        label="Choose a quarter:"
-        ariaLabel="Choose a quarter"
-        options={options}
-        styles={dropdownStyles}
-        onChange={onChange} // 绑定onChange事件处理器
-        selectedKey={selectedKey} // 设置选中项
-      />
-      <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey !== '2024Q1'} onClick={handleExport}>generate excel file</PrimaryButton>
-
-      
-      <ReadExcelFromSP/>
+        <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/>
+        <Dropdown
+          placeholder="Select an option"
+          label="Choose a quarter:"
+          ariaLabel="Choose a quarter"
+          options={options}
+          styles={dropdownStyles}
+          onChange={onChange} // 绑定onChange事件处理器
+          selectedKey={selectedKey} // 设置选中项
+        />
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={handleExport}>generate excel file</PrimaryButton>
+      </Stack>
+<Stack>
+      <ReadExcelFromSP />
       <div>分割</div>
+      <PrimaryButton onClick={handleCreateFolder}/>
+      </Stack>
       {/* <XlxsExcelFromSP/> 这个组件 无法保留格式*/}
 
     </>
