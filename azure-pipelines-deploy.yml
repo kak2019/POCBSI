@@ -1,0 +1,56 @@
+parameters:
+  # unique name of the job
+  job_name: deploy_sppkg
+  # friendly name of the job
+  display_name: Upload & deploy *.sppkg to SharePoint app catalog
+  # name of target enviroment deploying to
+  target_environment: 
+  # app catalog scope (tenant|sitecollection)
+  o365cli_app_catalog_scope: 'tenant'
+  variable_group_name: 
+jobs:
+  - deployment: ${{ parameters.job_name }}
+    displayName: ${{ parameters.display_name }}
+    pool:
+      vmImage: "windows-latest"
+    environment: ${{ parameters.target_environment }}
+    variables:
+      - group: ${{parameters.variable_group_name}}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - powershell: |
+                Write-Host "Hello from $Env:AGENT_NAME."
+                Write-Host "My ID is $Env:AGENT_ID."
+                Write-Host "AGENT_WORKFOLDER contents:"
+                gci $Env:AGENT_WORKFOLDER
+                Write-Host "AGENT_BUILDDIRECTORY contents:"
+                gci $Env:AGENT_BUILDDIRECTORY
+                Write-Host "BUILD_SOURCESDIRECTORY contents:"
+                gci $Env:BUILD_SOURCESDIRECTORY
+                Write-Host "Build.ArtifactStagingDirectory contents:"
+                # gci $Env:BUILD_ArtifactStagingDirectory
+                Write-Host "Over and out."
+
+                Write-Host  "##vso[task.LogIssue type=warning;] Importing PnP PowerShell"
+                $Path = "$Env:AGENT_BUILDDIRECTORY/drop/artifacts/3.19.2003.0/SharePointPnPPowerShellOnline.psd1"
+                Write-Host $Path
+                #Import-Module -Name $Path -Verbose
+                Import-Module -Name $Path
+
+                $siteUrl = "$(SiteUrl)"
+
+                Write-Host  "##vso[task.LogIssue type=warning;] Importing Spfx"
+                $pathToPackage ="$Env:AGENT_BUILDDIRECTORY/drop/pm-project.sppkg"
+
+                Write-Host  "##vso[task.LogIssue type=warning;] Deploying.."
+
+                $username = "$(DeployAcc)"
+                $password = "$(DeployAccPass)"
+                $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
+                $cred = New-Object System.Management.Automation.PSCredential ($username, $secpasswd)
+
+                Connect-PnPOnline -Url $siteUrl -Credentials $cred
+
+                Add-PnPApp -Path $pathToPackage -Scope Site -Publish -Overwrite

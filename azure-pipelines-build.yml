@@ -1,0 +1,65 @@
+parameters:
+  # unique name of the job
+  job_name: build_package
+  # friendly name of the job
+  display_name: Building & packaging
+  # project name
+  project_name: ''
+  working_directory: '.'
+  variable_group_name: 
+jobs:
+  - job: ${{ parameters.job_name }}
+    displayName: ${{ parameters.display_name }}
+    pool:
+      vmImage: "windows-latest"
+      demands:
+        - npm
+        - node.js
+        - java
+    variables:
+      - group: ${{parameters.variable_group_name}}
+      - name: npm_config_cache
+        value: $(Pipeline.Workspace)/.
+
+
+    steps:
+      - task: NodeTool@0
+        displayName: 'Use Node 16.x'
+        inputs:
+          versionSpec: 16.x
+
+      - task: Npm@1
+        displayName: 'npm install'
+        inputs:
+          verbose: false
+
+      - task: gulp@0
+        displayName: 'gulp bundle'
+        inputs:
+          targets: bundle
+          arguments: '--ship'
+        continueOnError: true
+
+      - task: gulp@0
+        displayName: 'gulp package-solution'
+        inputs:
+          targets: 'package-solution'
+          arguments: '--ship'
+
+      - task: CopyFiles@2
+        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+        inputs:
+          SourceFolder: '$(Build.Repository.LocalPath)/sharepoint/solution'
+          Contents: '*.sppkg'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+
+     
+      - task: CopyFiles@2
+        displayName: "Copy Files to: $(Build.ArtifactStagingDirectory)"
+        inputs:
+          Contents: "$(Build.SourcesDirectory)/artifacts/3.19.2003.0/*.*"
+          TargetFolder: "$(Build.ArtifactStagingDirectory)"
+      
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: drop'

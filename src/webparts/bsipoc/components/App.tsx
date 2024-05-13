@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable */
 import * as React from "react";
 import { memo, useEffect } from "react";
 import { spfi } from "@pnp/sp";
@@ -11,6 +11,7 @@ import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/
 import ReadExcelFromSP from "./ReadExcelFromSp";
 import YearPicker from "./control/YearSelect";
 import createrFolder from "./control/CreateFolder"
+import * as Excel from 'exceljs';
 // import XlxsExcelFromSP from "./xlxsexcel"
 
 
@@ -34,6 +35,7 @@ export default memo(function App() {
 
   const [excel, setExcel] = React.useState([]);
   const [allCountry, setAllCountry] = React.useState([])
+  const [priceTable, setPrice] = React.useState({})
   const [selectedKey, setSelectedKey] = React.useState<string>('');
   const [selectedYear, setSelectedYear] = React.useState<number | undefined>(undefined);
 
@@ -77,6 +79,47 @@ export default memo(function App() {
       obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.field_8 || 'NA')] || 0) * obj['Sales Package']
       return obj
     })
+  }
+
+  function calcToSummary(details: any, priceMap: any) {
+    const resObj: any = {
+      country: details[0].Country,
+      data: []
+    }
+    const p = {...priceMap}
+    for(let key in p) {
+      const value = p[key]
+      p[key] = {
+        price: value,
+        count: 0,
+        total: 0
+      }
+    }
+    details.map((val:any) => ({...val})).forEach((val: any) => {
+      val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
+      val['Sales Package;' + (val['Dealer Category'] || 'NA')] = val['Basic Package']
+      for(let key in p) {
+        p[key].count += Number(val[key] || 0)
+      }
+    })
+
+    for(let key in p) {
+      if(p[key].count === 0) continue;
+      resObj.data.push({
+        A: key.split(';')[0],
+        B: key.split(';').length > 1 ? '- ' + key.split(';')[1] : '',
+        C: p[key].count,
+        D: p[key].price,
+        E: p[key].count * p[key].price
+      })
+    }
+    resObj.data = resObj.data.filter((item: any) => item.C > 0)
+    const total = resObj.data.reduce((t: number, e: any) => t + Number(e.E), 0)
+    resObj.data.push({
+      A: 'Total',
+      E: total
+    })
+    return resObj
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -250,10 +293,44 @@ export default memo(function App() {
       ...appObj,
       ...packageObj
     }
-
+    setPrice(price)
     const finalExcelData = calcToExcel(order, price)
-    console.log(finalExcelData)
+    console.log(calcToSummary(finalExcelData, price))
     setExcel(finalExcelData)
+  }
+
+  const changeStyle = async (buffer: Excel.Buffer) => {
+    const workbook = new Excel.Workbook();
+    await workbook.xlsx.load(buffer); // 加载Excel文件
+    const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+
+    ['A4', 'B4', 'C4', 'D4', 'E4'].forEach(cell => {
+      worksheet.getCell(cell).fill= {
+        type: 'pattern',
+        pattern:'solid',
+        bgColor:{argb:'FFc0d6ed'}
+      }
+    })
+
+    const worksheetDetail = workbook.getWorksheet(2)
+    const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P']
+    zimu.forEach(z => {
+      worksheetDetail.getCell(z + '2').fill= {
+        type: 'pattern',
+        pattern:'solid',
+        bgColor:{argb:'FFb2d7e5'}
+      }
+      worksheetDetail.getCell(z + '3').fill= {
+        type: 'pattern',
+        pattern:'solid',
+        bgColor:{argb:'FFb2d7e5'}
+      }
+    })
+    
+    // 将修改后的工作簿写回Blob
+    const updatedBuffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([updatedBuffer], { type: 'application/octet-stream' });
+    return blob
   }
 
   // 定义上传文件的函数
@@ -273,45 +350,82 @@ export default memo(function App() {
     // 创建一个数组来存储所有的上传Promise
     const uploadPromises: any[] = [];
 
+    const buffer = await sp.web.getFileByServerRelativePath("/sites/proj-testspfeatures/Shared Documents/UD BSI_Output Template.xlsx").getBuffer();
+
+
     // 遍历所有国家
     allCountry.forEach(country => {
       // 筛选出该国家的订单
       const countryOrders = excel.filter(order => order.Country === country);
-      console.log("countryOrders", countryOrders);
       if (countryOrders.length === 0) {
         console.log(`No data for ${country}`);
         return;
       }
 
+      /* summary */
+      const workbookTemplate = XLSX.read(buffer, { type: 'buffer' });
+      const summaryTemplateName = workbookTemplate.SheetNames[1]
+      const workSheetSummaryTpt = workbookTemplate.Sheets[summaryTemplateName]
+      // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
+      
+      const tongji = calcToSummary(countryOrders, priceTable)
+      console.log(tongji)
+      workSheetSummaryTpt['B2'] = { v: tongji.country }
+      workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
+      for(let i = 5; i<tongji.data.length+5; i++) {
+        workSheetSummaryTpt['A'+ i] = { v: tongji.data[i-5].A}
+        workSheetSummaryTpt['B'+ i] = { v: tongji.data[i-5].B}
+        workSheetSummaryTpt['C'+ i] = { v: tongji.data[i-5].C}
+        workSheetSummaryTpt['D'+ i] ={ v:  tongji.data[i-5].D}
+        workSheetSummaryTpt['E'+ i] = { v: tongji.data[i-5].E}
+      }
+      workSheetSummaryTpt['!ref'] = 'A1:G20'
+      /* summary */
+
       // 创建工作表
-      const worksheet = XLSX.utils.json_to_sheet(countryOrders);
-      ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'N1', 'M1', 'O1', 'P1'].forEach(key => {
-        if (worksheet[key]) {
-          worksheet[key].s = {
-            fill: {
-              fgColor: { rgb: "add8e6" }
-            }
-          };
+      // const worksheet = XLSX.utils.json_to_sheet(countryOrders);
+      // ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'N1', 'M1', 'O1', 'P1'].forEach(key => {
+      //   if (worksheet[key]) {
+      //     worksheet[key].s = {
+      //       fill: {
+      //         fgColor: { rgb: "add8e6" }
+      //       }
+      //     };
+      //   }
+      // });
+      const summaryTemplateName2 = workbookTemplate.SheetNames[3]
+      const workSheetDetails = workbookTemplate.Sheets[summaryTemplateName2]
+      const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P']
+      for(let i = 3; i<countryOrders.length+3; i++) {
+        let j = 0;
+        for(let key in countryOrders[i-3]) {
+          workSheetDetails[zimu[j] +(i+1)] = {v: countryOrders[i-3][key]} 
+          j++
         }
-      });
+      }
+      workSheetDetails['!ref'] = 'A1:P100'
 
       // 创建工作簿
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Package Details");
+      XLSX.utils.book_append_sheet(workbook, workSheetSummaryTpt, "Market Summary");
+      // XLSX.utils.book_append_sheet(workbook, worksheet, "Package Details");
+      XLSX.utils.book_append_sheet(workbook, workSheetDetails, "Package Details");
 
       // 将工作簿转换为Blob
       const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      // const blob = new Blob([wbout], { type: "application/octet-stream" });
 
-      // 添加上传任务到数组
-      const uploadPromise = uploadFileToSP(
-        "/sites/proj-testspfeatures/Shared Documents/Cost Summary/2024Q1",
-        `UD ${country} 2024Q1.xlsx`,
-        blob
-      );
-      uploadPromises.push(uploadPromise);
+      changeStyle(wbout).then(blob => {
+        // 添加上传任务到数组
+        const uploadPromise = uploadFileToSP(
+          `/sites/proj-testspfeatures/Shared Documents/${selectedYear}${selectedKey}`,
+          `UD ${country} ${selectedYear}${selectedKey}.xlsx`,
+          blob
+        );
+        uploadPromises.push(uploadPromise);
+      })
     });
-
+    await createrFolder("/sites/proj-testspfeatures/Shared Documents/", selectedYear+selectedKey)
     // 等待所有文件上传完成
     Promise.all(uploadPromises).then(() => {
       alert("All cost summaries are generated and uploaded successfully.");
