@@ -42,7 +42,7 @@ jobs:
                 $siteUrl = "$(SiteUrl)"
 
                 Write-Host  "##vso[task.LogIssue type=warning;] Importing Spfx"
-                $pathToPackage ="$Env:AGENT_BUILDDIRECTORY/drop/pm-project.sppkg"
+                $pathToPackage ="$Env:AGENT_BUILDDIRECTORY/drop/bsi.sppkg"
 
                 Write-Host  "##vso[task.LogIssue type=warning;] Deploying.."
 

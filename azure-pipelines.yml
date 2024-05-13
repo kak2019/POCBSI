@@ -67,7 +67,7 @@ stages:
           variable_group_name: 'app-BSI QA'
           
   - stage: 'build_prod'
-    condition:  startsWith(variables['Build.SourceBranch'], 'refs/heads/master')
+    condition:  startsWith(variables['Build.SourceBranch'], 'refs/heads/main')
     displayName: build_prod
     jobs:
       - template: ./azure-pipelines-build.yml
@@ -76,7 +76,7 @@ stages:
           variable_group_name: 'app-BSI PROD'
           
   - stage: 'deploy_prod'
-    condition: and(succeeded('build_prod'), startsWith(variables['Build.SourceBranch'], 'refs/heads/master') )
+    condition: and(succeeded('build_prod'), startsWith(variables['Build.SourceBranch'], 'refs/heads/main') )
     jobs:
       - template: ./azure-pipelines-deploy.yml
         parameters:
