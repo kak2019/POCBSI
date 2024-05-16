@@ -17,7 +17,7 @@ import AppContext from "../../../common/AppContext";
 
 
 const dropdownStyles: Partial<IDropdownStyles> = {
-  dropdown: { width: 150 ,marginRight:10},
+  dropdown: { width: 150 ,margin:10},
   
 };
 
@@ -468,25 +468,28 @@ export default memo(function App() {
 
   return (
     <>
-      <h1>Business System Cost Calculation</h1>
+      <h1 style={{margin:10}}>Business System Cost Calculation</h1>
 
 
-        {/* <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/> */}
-        <Stack horizontal style={{width:600}}>
-          <Label style={{marginRight:10,width:100,whiteSpace:'nowarp'}}>Select Period</Label> 
+        
+        <Stack horizontal style={{width:600,marginLeft:10}}>
+          <Label style={{marginTop:10,width:100,whiteSpace:'nowarp'}}>Select Period</Label> 
           <Dropdown 
            options={options}
            styles={dropdownStyles}
           />
-          <Label>Period Details: {selectedKey}</Label>
+          <Label style={{marginTop:10}}>Period Details: {selectedKey}</Label>
         </Stack>
-        <Stack horizontal style={{width:600 ,marginTop:10}}>
-          <Label style={{marginRight:10,width:100,whiteSpace:'nowarp'}}>Select Market</Label>
+        <Stack horizontal style={{width:600 ,marginLeft:10}}>
+          <Label style={{width:100,whiteSpace:'nowarp'}}>Select Market</Label>
           <Dropdown
           options={options}
           styles={dropdownStyles}
           />
         </Stack>
+        <Stack style={{marginLeft:30}}>
+          This is for Test
+        <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/>
         <Dropdown
           placeholder="Select an option"
           label="Choose a quarter:"
@@ -496,13 +499,15 @@ export default memo(function App() {
           onChange={onChange} // 绑定onChange事件处理器
           selectedKey={selectedKey} // 设置选中项
         />
-        <Stack style={{width:230}}>
+
+</Stack>
+        <Stack style={{margin:10,width:230}}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={handleCreateFolder}>Generate Summary file</PrimaryButton>
         </Stack>
-        <Stack style={{width:230}}>
+        <Stack style={{margin:10,width:230}}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>View Summary file</PrimaryButton>
         </Stack>
-        <Stack style={{width:230}}>
+        <Stack style={{margin:10,width:230}}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>Notify Hub Representative</PrimaryButton>
         </Stack>
 
