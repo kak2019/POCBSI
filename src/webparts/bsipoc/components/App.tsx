@@ -42,8 +42,24 @@ export default memo(function App() {
   const [allCountry, setAllCountry] = React.useState([])
   const [priceTable, setPrice] = React.useState({})
   const [selectedKey, setSelectedKey] = React.useState<string>('');
+  
   const [selectedYear, setSelectedYear] = React.useState<number | undefined>(undefined);
-
+  // Period 选项
+  const [selectedKeyPeriod, setSelectedKeyPeriod] = React.useState<string>('');
+  const [periodNameOption,setPeriodNameOption] = React.useState<IDropdownOption[]> ()
+  const handleDropdownChange_Period = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption) :void=> {
+    if(item){
+      setSelectedKeyPeriod(item.key as string);
+    }
+};
+  // Market 选项
+  const [selectedKeyMarket, setSelectedKeyMarket] = React.useState<string>('');
+  const [marketNameOption,setMarketNameOption] = React.useState<IDropdownOption[]> ()
+  const handleDropdownChange_Market = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption) :void=> {
+    if(item){
+      setSelectedKeyMarket(item.key as string);
+    }
+};
   const handleYearChange = (year: number) => {
       setSelectedYear(year);  // 更新状态以保存选中的年份
       console.log(`Selected year in App component: ${year}`);
@@ -217,6 +233,13 @@ export default memo(function App() {
       // <RowLimit>400</RowLimit>
     }).then((response) => {
       console.log("period", response.Row)
+      if(response.Row?.length>0){
+        setPeriodNameOption(
+        response.Row.filter(item =>item.AvailableforSelection==="Yes").map(period => ({
+          key: period.PeriodDetails,
+          text: period.PeriodName
+      })))
+      }
       // console.log("respackage", response.Row.filter((item)=>item.field_2))
       // if (response.Row.length > 0) {
       //   const resObj: any = {}
@@ -289,6 +312,15 @@ export default memo(function App() {
         const uniqueList = Array.from(new Set(response.Row.map(item => item.Market)))
         console.log("country", uniqueList)
         setAllCountry(uniqueList)
+        const uniqueMarket =Array.from(new Set(uniqueList))
+       
+        uniqueMarket.push("ALL");
+        console.log("hhh",uniqueMarket);
+        
+        setMarketNameOption(uniqueMarket.map(market=>({
+          key:market,
+          text:market
+        })),)
         //setAllCountry
         return response.Row
       }
@@ -447,7 +479,9 @@ export default memo(function App() {
   useEffect(() => {
     initData().then(res => res).catch(err => err)
   }, [])
-
+//   useEffect(() => {
+//     handleDropdownChange_Market(null, marketNameOption[marketNameOption?.length -1]);
+// }, []);
   const handleCreateFolder = async () => {
     if (!selectedYear) {
         alert("请选择年份名称");
@@ -475,17 +509,21 @@ export default memo(function App() {
         <Stack horizontal style={{width:600,marginLeft:10}}>
           <Label style={{marginTop:10,width:100,whiteSpace:'nowarp'}}>Select Period</Label> 
           <Dropdown 
-           options={options}
+           options={periodNameOption}
            styles={dropdownStyles}
+           onChange={handleDropdownChange_Period}
           />
-          <Label style={{marginTop:10}}>Period Details: {selectedKey}</Label>
+          <Label style={{marginTop:10}}>Period Details: {selectedKeyPeriod}</Label>
         </Stack>
         <Stack horizontal style={{width:600 ,marginLeft:10}}>
-          <Label style={{width:100,whiteSpace:'nowarp'}}>Select Market</Label>
+          <Label style={{marginTop:10,width:100,whiteSpace:'nowarp'}}>Select Market</Label>
           <Dropdown
-          options={options}
+          options={marketNameOption}
           styles={dropdownStyles}
+          onChange={handleDropdownChange_Market}
+          defaultSelectedKey={"ALL"}
           />
+          {selectedKeyMarket}
         </Stack>
         <Stack style={{marginLeft:30}}>
           This is for Test
