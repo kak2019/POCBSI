@@ -5,7 +5,7 @@ import { spfi } from "@pnp/sp";
 import { getSP } from "../../../common/pnpjsConfig";
 import "@pnp/sp/webs";
 import "@pnp/sp/folders";
-import { PrimaryButton, Stack } from "office-ui-fabric-react";
+import { Label, PrimaryButton, Stack } from "office-ui-fabric-react";
 import * as XLSX from 'xlsx';
 import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
 
@@ -17,7 +17,8 @@ import AppContext from "../../../common/AppContext";
 
 
 const dropdownStyles: Partial<IDropdownStyles> = {
-  dropdown: { width: 300 },
+  dropdown: { width: 150 ,marginRight:10},
+  
 };
 
 const options: IDropdownOption[] = [
@@ -467,10 +468,25 @@ export default memo(function App() {
 
   return (
     <>
-      <h2>BSI POC</h2>
-      <Stack horizontal>
+      <h1>Business System Cost Calculation</h1>
 
-        <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/>
+
+        {/* <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/> */}
+        <Stack horizontal style={{width:600}}>
+          <Label style={{marginRight:10,width:100,whiteSpace:'nowarp'}}>Select Period</Label> 
+          <Dropdown 
+           options={options}
+           styles={dropdownStyles}
+          />
+          <Label>Period Details: {selectedKey}</Label>
+        </Stack>
+        <Stack horizontal style={{width:600 ,marginTop:10}}>
+          <Label style={{marginRight:10,width:100,whiteSpace:'nowarp'}}>Select Market</Label>
+          <Dropdown
+          options={options}
+          styles={dropdownStyles}
+          />
+        </Stack>
         <Dropdown
           placeholder="Select an option"
           label="Choose a quarter:"
@@ -480,14 +496,16 @@ export default memo(function App() {
           onChange={onChange} // 绑定onChange事件处理器
           selectedKey={selectedKey} // 设置选中项
         />
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={handleCreateFolder}>generate excel file</PrimaryButton>
-      </Stack>
-<Stack>
-      {/* <ReadExcelFromSP /> */}
-      <div>分割</div>
-      <PrimaryButton onClick={handleCreateFolder}/>
-      </Stack>
-      {/* <XlxsExcelFromSP/> 这个组件 无法保留格式*/}
+        <Stack style={{width:230}}>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={handleCreateFolder}>Generate Summary file</PrimaryButton>
+        </Stack>
+        <Stack style={{width:230}}>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>View Summary file</PrimaryButton>
+        </Stack>
+        <Stack style={{width:230}}>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>Notify Hub Representative</PrimaryButton>
+        </Stack>
+
 
     </>
   )

@@ -5,6 +5,7 @@ import "@pnp/sp/folders";
 
 // 创建文件夹的函数
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default async function createFolder(libraryUrl: string, folderName: string) {
     const sp = spfi(getSP());
     try {
