@@ -36,6 +36,7 @@ export default memo(function App() {
   const webURL = ctx.context?._pageContext?._web?.absoluteUrl;
   const userEmail = ctx.context?._pageContext?._user?.email;
   const Site_Relative_Links = webURL.slice(webURL.indexOf('/sites'))
+  const [nameObj, setNameObj] = React.useState<any>({})
   console.log("site",Site_Relative_Links)
   console.log("weburl",webURL,userEmail)
   const [excel, setExcel] = React.useState([]);
@@ -50,6 +51,7 @@ export default memo(function App() {
   const handleDropdownChange_Period = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption) :void=> {
     if(item){
       setSelectedKeyPeriod(item.key as string);
+      setSelectedKey(item.text as string);
     }
 };
   // Market 选项
@@ -73,7 +75,7 @@ export default memo(function App() {
   };
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  function calcToExcel(orders: any, priceMap: any) {
+  function calcToExcel(orders: any, priceMap: any, map: any) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return orders.map((val: any) => {
       const obj: any = {
@@ -98,13 +100,16 @@ export default memo(function App() {
       // console.log("obj",obj)
       const keys = ['Hub Package','CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
       obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
+      obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
+      obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2)
+      obj['Hub'] = val.Hub
       return obj
     })
   }
 
-  function calcToSummary(details: any, priceMap: any) {
+  function calcToSummary(details: any, priceMap: any, map: any) {
     const resObj: any = {
       Country: details[0].Market,
       data: []
@@ -121,7 +126,8 @@ export default memo(function App() {
     }
     details.map((val:any) => ({...val})).forEach((val: any) => {
       val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
-      val['Sales Package;' + (val['Dealer Category'] || 'NA')] = val['Basic Package']
+      val['Sales Package;' + (val['Dealer Category'] || 'NA')] = val['Sales Package']
+      val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
       for(let key in p) {
         p[key].count += Number(val[key] || 0)
       }
@@ -130,24 +136,27 @@ export default memo(function App() {
     for(let key in p) {
       if(p[key].count === 0) continue;
       resObj.data.push({
-        A: key.split(';')[0],
-        B: key.split(';').length > 1 ? '- ' + key.split(';')[1] : '',
+        // A: key.split(';')[0],
+        // B: key.split(';').length > 1 ? '- ' + key.split(';')[1] : '',
+        A: map[key],
+        B: null,
         C: p[key].count,
-        D: p[key].price,
-        E: p[key].count * p[key].price
+        D: (p[key].price).toFixed(2),
+        E: (p[key].count * p[key].price).toFixed(2)
       })
     }
     resObj.data = resObj.data.filter((item: any) => item.C > 0)
     const total = resObj.data.reduce((t: number, e: any) => t + Number(e.E), 0)
     resObj.data.push({
       A: 'Total',
-      E: total
+      E: total.toFixed(2)
     })
     return resObj
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const initData = async () => {
+    let obj:any = {}
     // 拿应用价格表
     const appObj = await sp.web.lists.getByTitle("ApplicationPriceMaster").renderListDataAsStream({
       /* 字段关系如下
@@ -160,6 +169,7 @@ export default memo(function App() {
       ViewXml: `<View>
                       <ViewFields>
                         <FieldRef Name="ApplicationName"/>
+                        <FieldRef Name="Description"/>
                         <FieldRef Name="PriceType"/>
                         <FieldRef Name="Price_x0028_USD_x0029_"/>
                       </ViewFields>
@@ -173,6 +183,7 @@ export default memo(function App() {
         const resObj: any = {}
         response.Row.forEach(val => {
           resObj[val.ApplicationName] = val.Price_x0028_USD_x0029_ * 1
+          obj[val.ApplicationName] = val.Description
         })
         return resObj
       }
@@ -194,6 +205,7 @@ export default memo(function App() {
       ViewXml: `<View>
                       <ViewFields>
                         <FieldRef Name="PackageCategory"/>
+                        <FieldRef Name="Description"/>
                         <FieldRef Name="PartnerType"/>
                         <FieldRef Name="DealerCategory"/>
                         <FieldRef Name="MonthlyPrice_x0028_USD_x0029_"/>
@@ -209,6 +221,7 @@ export default memo(function App() {
         const resObj: any = {}
         response.Row.forEach(val => {
           resObj[`${val.PackageCategory};${val.DealerCategory}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
+          obj[`${val.PackageCategory};${val.DealerCategory}`] = val.Description
         })
         console.log("resobji",resObj)
         return resObj
@@ -332,8 +345,11 @@ export default memo(function App() {
       ...packageObj
     }
     setPrice(price)
-    const finalExcelData = calcToExcel(order, price)
-    console.log(calcToSummary(finalExcelData, price))
+    setNameObj(obj)
+    console.log('price', price)
+    const finalExcelData = calcToExcel(order, price, obj)
+    
+    console.log(calcToSummary(finalExcelData, price, obj))
     console.log("excel121",finalExcelData)
     setExcel(finalExcelData)
   }
@@ -391,8 +407,13 @@ export default memo(function App() {
 
     const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links+"/BSITemplate/UD BSI_Output Template.xlsx").getBuffer();
 
+    let selectCountry = allCountry.slice(0)
+    if(selectedKeyMarket !== "") {
+      selectCountry = allCountry.filter(country => country === selectedKeyMarket)
+    }
+
     // 遍历所有国家
-    allCountry.forEach(Market => {
+    selectCountry.forEach(Market => {
       // 筛选出该国家的订单
       // console.log("2exe",excel)
       const countryOrders = excel.filter(order => order.Market === Market);
@@ -407,12 +428,13 @@ export default memo(function App() {
       const workSheetSummaryTpt = workbookTemplate.Sheets[summaryTemplateName]
       // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
       
-      const tongji = calcToSummary(countryOrders, priceTable)
+      const tongji = calcToSummary(countryOrders, priceTable, nameObj)
       // \console.log("tongji",tongji)
-      workSheetSummaryTpt['B2'] = { v: tongji.Market }
-      workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
+      workSheetSummaryTpt['B2'] = { v: tongji.Country }
+      // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
+      workSheetSummaryTpt['E2'] = { v: selectedKeyPeriod}
       for(let i = 5; i<tongji.data.length+5; i++) {
-        workSheetSummaryTpt['A'+ i] = { v: tongji.data[i-5].A}
+        workSheetSummaryTpt['A'+ i] = { v: tongji.data[i-5].A }
         workSheetSummaryTpt['B'+ i] = { v: tongji.data[i-5].B}
         workSheetSummaryTpt['C'+ i] = { v: tongji.data[i-5].C}
         workSheetSummaryTpt['D'+ i] ={ v:  tongji.data[i-5].D}
@@ -442,6 +464,12 @@ export default memo(function App() {
           j++
         }
       }
+      
+    
+      const total = countryOrders.reduce((t: number, item: any) => t+ Number(item['Total(Per Month)']), 0)
+      workSheetDetails['A' + (countryOrders.length + 4)] = { v: 'Total' }
+      workSheetDetails['Q' + (countryOrders.length + 4)] = { v: total.toFixed(2) }
+
       workSheetDetails['!ref'] = 'A1:R100'
       
       // 创建工作簿
@@ -455,20 +483,33 @@ export default memo(function App() {
       // const blob = new Blob([wbout], { type: "application/octet-stream" });
       
       changeStyle(wbout).then(blob => {
-        // 添加上传任务到数组
-        const uploadPromise = uploadFileToSP(
-          `${Site_Relative_Links}/Shared Documents/${selectedYear}${selectedKey}`,
-          `UD ${Market} ${selectedYear}${selectedKey}.xlsx`,
-          blob
-        );
-        uploadPromises.push(uploadPromise);
+        createrFolder(Site_Relative_Links+`/Shared Documents/${selectedKey}`, countryOrders[0].Hub)
+        .then(() => {
+          return new Promise<void>((resolve) => {
+              setTimeout(() => {
+                  resolve();
+              }, 3000);
+          });
+      })
+        .then(() => {
+          // 添加上传任务到数组
+          const uploadPromise = uploadFileToSP(
+            `${Site_Relative_Links}/Shared Documents/${selectedKey}/${countryOrders[0].Hub}`,
+            `UD ${Market} ${selectedKey}.xlsx`,
+            blob
+          );
+          uploadPromises.push(uploadPromise);
+        })
+        
       })
     });
-    // await createrFolder(Site_Relative_Links+"/Shared Documents/", selectedYear+selectedKey)
     // 等待所有文件上传完成
     Promise.all(uploadPromises).then(() => {
-      alert("All cost summaries are generated and uploaded successfully.");
-      setSelectedKey("")
+      setTimeout(() => {
+        alert("All cost summaries are generated and uploaded successfully.");
+      }, 3000);
+      
+      // setSelectedKey("")
     }).catch(err => {
       console.log("An error occurred during uploading:", err);
     });
@@ -483,20 +524,16 @@ export default memo(function App() {
 //     handleDropdownChange_Market(null, marketNameOption[marketNameOption?.length -1]);
 // }, []);
   const handleCreateFolder = async () => {
-    if (!selectedYear) {
-        alert("请选择年份名称");
+    if (!selectedKeyPeriod) {
+        alert("Please choose period");
         return;
     }
-    if (!selectedKey) {
-      alert("请选择月份");
-      return;
-  }
     try {
-        await createrFolder(Site_Relative_Links+"/Shared Documents", selectedYear+selectedKey);
-        alert("文件夹创建成功!");
+        await createrFolder(Site_Relative_Links+"/Shared Documents", selectedKey);
+        alert("Folder created successfully");
         await handleExport();
     } catch (error) {
-        alert("创建文件夹失败: " + error.message);
+        alert("Failed to create folder: " + error.message);
     }
 };
 
@@ -525,7 +562,7 @@ export default memo(function App() {
           />
           {selectedKeyMarket}
         </Stack>
-        <Stack style={{marginLeft:30}}>
+        {/* <Stack style={{marginLeft:30}}>
           This is for Test
         <YearPicker startYear={2023} endYear={2030}  onYearChange={handleYearChange}/>
         <Dropdown
@@ -538,12 +575,12 @@ export default memo(function App() {
           selectedKey={selectedKey} // 设置选中项
         />
 
-</Stack>
+</Stack> */}
         <Stack style={{margin:10,width:230}}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={handleCreateFolder}>Generate Summary file</PrimaryButton>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === ''} onClick={handleCreateFolder}>Generate Summary file</PrimaryButton>
         </Stack>
         <Stack style={{margin:10,width:230}}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>View Summary file</PrimaryButton>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>window.open(`${Site_Relative_Links}/Shared Documents/${selectedKey}`, "_blank")}>View Summary file</PrimaryButton>
         </Stack>
         <Stack style={{margin:10,width:230}}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={()=>alert("正在开发")}>Notify Hub Representative</PrimaryButton>
