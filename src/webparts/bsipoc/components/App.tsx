@@ -5,17 +5,20 @@ import { spfi } from "@pnp/sp";
 import { getSP } from "../../../common/pnpjsConfig";
 import "@pnp/sp/webs";
 import "@pnp/sp/folders";
-import { Label, PrimaryButton, Stack } from "office-ui-fabric-react";
+import { DefaultButton, Label, mergeStyleSets, PrimaryButton, Stack } from "office-ui-fabric-react";
 import * as XLSX from 'xlsx';
 import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
-
+import { ProgressIndicator } from '@fluentui/react/lib/ProgressIndicator';
 // import YearPicker from "./control/YearSelect";
 import createrFolder from "./control/CreateFolder"
 import * as Excel from 'exceljs';
 import AppContext from "../../../common/AppContext";
 // import XlxsExcelFromSP from "./xlxsexcel"
 
+import { Modal, Toggle } from '@fluentui/react';
+import { mergeStyles } from '@fluentui/react/lib/Styling';
 
+import { useBoolean } from "@fluentui/react-hooks";
 const dropdownStyles: Partial<IDropdownStyles> = {
   dropdown: { width: 150, margin: 10 },
 
@@ -31,6 +34,42 @@ const dropdownStyles: Partial<IDropdownStyles> = {
 
 
 export default memo(function App() {
+  //modal
+  const [isModalOpen, { setTrue: showModal, setFalse: hideModal }] = useBoolean(false);
+  const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
+  const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
+  const classNames = mergeStyleSets({
+    modal: {
+      width: '90%',
+      maxwidth: 400,
+      margin: 'auto',
+      padding: 20, // 增加内边距
+      boxSizing: 'border-box', // 确保padding包含在宽度内
+    },
+    container: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+
+    },
+    header: {
+      textAlign: 'center',
+    },
+    paragraph: {
+      textAlign: 'left',
+      wordWrap: 'break-word',
+      whiteSpace: 'normal',
+    }, buttonContainer: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      marginTop: 20,
+    },
+    button: {
+      marginLeft: 10,
+      marginRight: 10
+    }
+  });
+  //
   const sp = spfi(getSP());
   const ctx = React.useContext(AppContext);
   const webURL = ctx.context?._pageContext?._web?.absoluteUrl;
@@ -105,15 +144,27 @@ export default memo(function App() {
       const keys = ['Hub Package', 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
       obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
       obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
+      // obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
+      // obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
-      obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
+      obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerType)] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2)
       obj['Hub'] = val.Hub
+      // console.log("obj3232",obj)
       return obj
     })
   }
 
-  function calcToSummary(details: any, priceMap: any, map: any) {
+  function calcToSummary(details: any, priceMap: any, map: any, period: any) {
+    // 添加了从period 获得的月份 在计算数量和总价格的时候用到了
+    let numMonth = 1
+    if (selectedKey !== "") {
+      console.log(period, selectedKeyPeriod)
+      numMonth = period.filter((per: any) => per.text === selectedKey)[0].nummonth
+      console.log("nummonth1", numMonth)
+    }
+    console.log("nummonth2", numMonth)
+
     const resObj: any = {
       Country: details[0].Market,
       data: []
@@ -130,25 +181,30 @@ export default memo(function App() {
     }
     details.map((val: any) => ({ ...val })).forEach((val: any) => {
       val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
-      val['Sales Package;' + (val['Dealer Category'] || 'NA')] = val['Sales Package']
+      val['Sales Package;' + (val['Dealer Type'])] = val['Sales Package']
       val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
       for (let key in p) {
         p[key].count += Number(val[key] || 0)
       }
     })
-    console.log("selectedKeyPeriod", periodDetails,["3434"])
-   //const numMonth = periodDetails.filter(item => item.periodDetails === selectedKey)
+    console.log("selectedKeyPeriod", periodDetails, ["3434"])
+    //const numMonth = periodDetails.filter(item => item.periodDetails === selectedKey)
     //console.log("nm,omth", numMonth)
     for (let key in p) {
-      if (p[key].count === 0) continue;
+      const isLDSorLSS = key === 'LDS' || key === 'LSS';
+
+      // 检查 LDS 和 LSS 是否都有值
+      const bothLDSandLSSHaveValues = p['LDS'].count > 0 && p['LSS'].count > 0;
+      if (p[key].count === 0 || (isLDSorLSS && bothLDSandLSSHaveValues)) continue;
+
       resObj.data.push({
         // A: key.split(';')[0],
         // B: key.split(';').length > 1 ? '- ' + key.split(';')[1] : '',
         A: map[key],
         B: null,
-        C: p[key].count,
+        C: p[key].count * numMonth,
         D: (p[key].price).toFixed(2),
-        E: (p[key].count * p[key].price).toFixed(2)
+        E: (p[key].count * numMonth * p[key].price).toFixed(2)
       })
     }
     resObj.data = resObj.data.filter((item: any) => item.C > 0)
@@ -236,7 +292,7 @@ export default memo(function App() {
       const workSheetSummaryTpt = workbookTemplate.Sheets[summaryTemplateName]
       // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
 
-      const tongji = calcToSummary(countryOrders, priceTable, nameObj)
+      const tongji = calcToSummary(countryOrders, priceTable, nameObj, periodDetails)
       // \console.log("tongji",tongji)
       workSheetSummaryTpt['B2'] = { v: tongji.Country }
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
@@ -325,6 +381,7 @@ export default memo(function App() {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const initData = async () => {
     let obj: any = {}
+    let perioddetails_init = {}
     // 拿应用价格表
     const appObj = await sp.web.lists.getByTitle("ApplicationPriceMaster").renderListDataAsStream({
       /* 字段关系如下
@@ -415,21 +472,22 @@ export default memo(function App() {
     }).then((response) => {
       console.log("period", response.Row)
       if (response.Row?.length > 0) {
-      
+
         setPeriodNameOption(
           response.Row.filter(item => item.AvailableforSelection === "Yes").map(period => ({
             key: period.PeriodDetails,
             text: period.PeriodName
           })))
-          const details = response.Row.filter(item => item.AvailableforSelection === "Yes").map(period => ({
-            key: period.PeriodDetails,
-            text: period.PeriodName,
-            nummonth:period.NumberofMonths
-          }))
-        console.log("detailsssssss",details)
-          setperiodDetails(details)
-            
-        
+        const details = response.Row.filter(item => item.AvailableforSelection === "Yes").map(period => ({
+          key: period.PeriodDetails,
+          text: period.PeriodName,
+          nummonth: period.NumberofMonths
+        }))
+        perioddetails_init = details
+        console.log("erioddetails", perioddetails_init)
+        setperiodDetails(details)
+
+
       }
       // console.log("respackage", response.Row.filter((item)=>item.field_2))
       // if (response.Row.length > 0) {
@@ -531,7 +589,7 @@ export default memo(function App() {
     console.log('price', price)
     const finalExcelData = calcToExcel(order, price, obj)
 
-    console.log(calcToSummary(finalExcelData, price, obj))
+    console.log(calcToSummary(finalExcelData, price, obj, period))
     console.log("excel121", finalExcelData)
     setExcel(finalExcelData)
   }
@@ -588,7 +646,7 @@ export default memo(function App() {
           defaultSelectedKey={"ALL"}
         />
 
-        {selectedKeyMarket && <Label style={{ marginLeft: 10 ,marginTop:10}}>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>}
+        {selectedKeyMarket && <Label style={{ marginTop: 10 }}>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>}
       </Stack>
       {/* <Stack style={{marginLeft:30}}>
           This is for Test
@@ -613,7 +671,33 @@ export default memo(function App() {
       <Stack style={{ margin: 10, width: 230 }}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={() => alert("正在开发")}>Notify Hub Representative</PrimaryButton>
       </Stack>
-{/* {periodDetails} */}
+      <Stack>
+        <ProgressIndicator label="Uploading files now" description="Example description" />
+        {/* <Toggle label="Is draggable" inlineLabel onChange={toggleIsDraggable} checked={isDraggable} /> */}
+        <DefaultButton onClick={showModal} text="Open Modal" />
+        <Modal
+          titleAriaId={"title"}
+          isOpen={isModalOpen}
+          onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.container}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Warning</h2>
+          {/* </Stack> */}
+          <p className={classNames.paragraph}>
+            Summary file for selected Period or Market has been generated.
+            Choosing to re-generate will overwrite the existing files.</p>
+          <p className={classNames.paragraph}>Please confirm if you wish to proceed.</p>
+          <div className={classNames.buttonContainer}>
+            <DefaultButton className={classNames.button}>Yes</DefaultButton>
+            <DefaultButton className={classNames.button}>No</DefaultButton>
+          </div>
+        </Modal>
+
+      </Stack>
+      {/* {periodDetails} */}
 
     </>
   )
