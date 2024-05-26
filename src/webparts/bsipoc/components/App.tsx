@@ -36,6 +36,7 @@ const dropdownStyles: Partial<IDropdownStyles> = {
 export default memo(function App() {
   //modal
   const [isModalOpen, { setTrue: showModal, setFalse: hideModal }] = useBoolean(false);
+  const [isModalOpenhub, { setTrue: showModalhub, setFalse: hideModalhub }] = useBoolean(false);
   const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
   const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const classNames = mergeStyleSets({
@@ -62,7 +63,7 @@ export default memo(function App() {
     }, buttonContainer: {
       display: 'flex',
       justifyContent: 'flex-end',
-      marginTop: 20,
+      marginTop: 10,
     },
     button: {
       marginLeft: 10,
@@ -83,17 +84,23 @@ export default memo(function App() {
   const [allCountryandHub, setallCountryandHub] = React.useState([])
   const [priceTable, setPrice] = React.useState({})
   const [selectedKey, setSelectedKey] = React.useState<string>('');
-
-  // const [selectedYear, setSelectedYear] = React.useState<number | undefined>(undefined);
+  // 判断是否已经生成过文件
+  const [fileExistState, setfileExistState] = React.useState(false);
+  // 仍然生成文件
+  // const [generareFileAgain, setGenerareFileAgain] = React.useState(false);
   // Period 选项
   const [selectedKeyPeriod, setSelectedKeyPeriod] = React.useState<string>("");
   const [periodNameOption, setPeriodNameOption] = React.useState<IDropdownOption[]>()
   const [NumberofMonths, setNumberOfMonth] = React.useState(1)
   const [periodDetails, setperiodDetails] = React.useState([])
+  //HUb info
+  const [hubinfosp, sethubinfosp] = React.useState([])
   const handleDropdownChange_Period = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
     if (item) {
       setSelectedKeyPeriod(item.key as string);
       setSelectedKey(item.text as string);
+      const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
+
     }
 
   };
@@ -105,17 +112,7 @@ export default memo(function App() {
       setSelectedKeyMarket(item.key as string);
     }
   };
-  // const handleYearChange = (year: number) => {
-  //     setSelectedYear(year);  // 更新状态以保存选中的年份
-  //     console.log(`Selected year in App component: ${year}`);
-  // };
 
-  // const onChange = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
-  //   if (item) {
-  //     setSelectedKey(item.key as string);
-  //     console.log('Selected:', item.key);
-  //   }
-  // };
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   function calcToExcel(orders: any, priceMap: any, map: any) {
@@ -272,7 +269,8 @@ export default memo(function App() {
     const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/UD BSI_Output Template.xlsx").getBuffer();
 
     let selectCountry = allCountry.slice(0)
-    if (selectedKeyMarket !== "") {
+    if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL") {
+      console.log(selectedKeyMarket, "erer")
       selectCountry = allCountry.filter(country => country === selectedKeyMarket)
     }
 
@@ -347,14 +345,18 @@ export default memo(function App() {
       // const blob = new Blob([wbout], { type: "application/octet-stream" });
 
       changeStyle(wbout).then(blob => {
-        createrFolder(Site_Relative_Links + `/Shared Documents/${selectedKey}`, countryOrders[0].Hub)
-          .then(() => {
-            return new Promise<void>((resolve) => {
-              setTimeout(() => {
-                resolve();
-              }, 3000);
-            });
-          })
+        doesFolderExist("Shared Documents", `${selectedKey}/${countryOrders[0].Hub}`).then(async exists => {
+          if (!exists) {
+            createrFolder(Site_Relative_Links + `/Shared Documents/${selectedKey}`, countryOrders[0].Hub)
+          }
+        }).then(() => {
+          return new Promise<void>((resolve) => {
+            // setTimeout(() => {
+            //   resolve();
+            // }, 3000);
+            resolve();
+          });
+        })
           .then(() => {
             // 添加上传任务到数组
             const uploadPromise = uploadFileToSP(
@@ -372,7 +374,7 @@ export default memo(function App() {
       setTimeout(() => {
         alert("All cost summaries are generated and uploaded successfully.");
       }, 3000);
-
+      const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
     }).catch(err => {
       console.log("An error occurred during uploading:", err);
@@ -501,6 +503,35 @@ export default memo(function App() {
       return {}
     })
 
+
+    // 拿 Hub Representative 周期对应关系
+    const hub = await sp.web.lists.getByTitle("Hub Representative").renderListDataAsStream({
+
+      ViewXml: `<View>
+                      <ViewFields>
+                        <FieldRef Name="Hub"/>
+                        <FieldRef Name="HubReprensentative"/>
+                        <FieldRef Name="Copyto"/>
+                      </ViewFields>
+                   
+                    </View>`,
+      // <RowLimit>400</RowLimit>
+    }).then((response) => {
+      console.log("hub", response.Row)
+      if (response.Row?.length > 0) {
+        const hubinfo = response.Row.map(item => ({ "Hub": item.Hub, HubReprensentative: item.HubReprensentative.map((rep:any) => ({
+          id: rep.id,
+          value: rep.value,
+          title: rep.title,
+          email: rep.email,
+          sip: rep.sip,
+          picture: rep.picture,
+          jobTitle: rep.jobTitle,
+          department: rep.department,
+        }))}))
+        sethubinfosp(hubinfo)
+      }
+    })
     // 拿主表订单
     const order = await sp.web.lists.getByTitle("Partner Master").renderListDataAsStream({
       /* 字段关系如下
@@ -593,7 +624,20 @@ export default memo(function App() {
     console.log("excel121", finalExcelData)
     setExcel(finalExcelData)
   }
-
+  async function doesFolderExist(libraryName: string, folderName: string): Promise<boolean> {
+    try {
+      // 尝试获取目标文件夹的属性
+      const folder = await sp.web.getFolderByServerRelativePath(`${Site_Relative_Links}/${libraryName}/${folderName}`).select("Exists")();
+      return folder.Exists;
+    } catch (error) {
+      // 如果抛出404错误，表示文件夹不存在
+      if (error.status === 404) {
+        return false;
+      } else {
+        throw error; // 处理其他可能的错误
+      }
+    }
+  }
   // 应用单价（每人）表
   useEffect(() => {
     initData().then(res => res).catch(err => err)
@@ -601,19 +645,36 @@ export default memo(function App() {
   //   useEffect(() => {
   //     handleDropdownChange_Market(null, marketNameOption[marketNameOption?.length -1]);
   // }, []);
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = async (genarateAgain: boolean = false) => {
     if (!selectedKeyPeriod) {
       alert("Please choose period");
       return;
     }
-    try {
-      await createrFolder(Site_Relative_Links + "/Shared Documents", selectedKey);
-      alert("Folder created successfully");
-      await handleExport();
-    } catch (error) {
-      alert("Failed to create folder: " + error.message);
-    }
+    doesFolderExist("Shared Documents", selectedKey).then(async exists => {
+
+      console.log(`Folder exists: ${exists}`);
+      if (!exists || genarateAgain) {
+        try {
+          await createrFolder(Site_Relative_Links + "/Shared Documents", selectedKey);
+          // alert("Folder created successfully");
+          // setTimeout(async () => {
+          //   await handleExport();
+          // }, 3000);
+          await handleExport();
+        } catch (error) {
+          alert("Failed to create folder: " + error.message);
+        }
+        hideModal()
+      }
+      else {
+        showModal()
+      }
+    }).catch(error => {
+      console.error(`Error: ${error}`);
+    });
+
   };
+
   useEffect(() => {
     // 模拟组件加载后触发 onChange 事件
     if (marketNameOption && marketNameOption.length > 0) {
@@ -663,22 +724,24 @@ export default memo(function App() {
 
 </Stack> */}
       <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={handleCreateFolder}>Generate Summary File {selectedKeyPeriod}</PrimaryButton>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={() => handleCreateFolder()}>Generate Summary File {selectedKeyPeriod}</PrimaryButton>
       </Stack>
       <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={() => window.open(`${Site_Relative_Links}/Shared Documents/${selectedKey}`, "_blank")}>View Summary File</PrimaryButton>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState}
+          onClick={() => window.open(`${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`, "_blank")}>View Summary File
+        </PrimaryButton>
       </Stack>
       <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === ''} onClick={() => alert("正在开发")}>Notify Hub Representative</PrimaryButton>
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState} onClick={showModalhub}>Notify Hub Representative</PrimaryButton>
       </Stack>
       <Stack>
         <ProgressIndicator label="Uploading files now" description="Example description" />
         {/* <Toggle label="Is draggable" inlineLabel onChange={toggleIsDraggable} checked={isDraggable} /> */}
-        <DefaultButton onClick={showModal} text="Open Modal" />
+        <DefaultButton onClick={showModalhub} text="Open Modal" />
         <Modal
           titleAriaId={"title"}
           isOpen={isModalOpen}
-          onDismiss={hideModal}
+          // onDismiss={hideModal}
           isBlocking={false}
           containerClassName={classNames.container}
         // dragOptions={isDraggable ? dragOptions : undefined}
@@ -687,12 +750,58 @@ export default memo(function App() {
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            Summary file for selected Period or Market has been generated.
-            Choosing to re-generate will overwrite the existing files.</p>
+            Summary file for selected Period or Market has been </p> <p>generated.
+              Choosing to re-generate will overwrite the existing files.</p>
           <p className={classNames.paragraph}>Please confirm if you wish to proceed.</p>
           <div className={classNames.buttonContainer}>
-            <DefaultButton className={classNames.button}>Yes</DefaultButton>
-            <DefaultButton className={classNames.button}>No</DefaultButton>
+            <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
+            <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
+          </div>
+        </Modal>
+        <Modal
+          titleAriaId={"hub"}
+          isOpen={isModalOpenhub}
+          // onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.container}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Hub Notify</h2>
+          <p>You are going to send email notification to cantacts below.Please confirm if you wish to proceed</p>
+          {/* </Stack> */}
+          <Label>Summary File:    {selectedKey} </Label>
+          
+          <ul>
+          
+
+          {
+             hubinfosp
+              .filter((item) => {
+                if (selectedKeyMarket === "ALL") {
+                  return true;
+                } else {
+                  return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
+                }
+              }).map((hubInfo, index) => (
+          //  hubinfosp.filter(item=>{if(selectedKeyMarket!=="All"){console.log("item.hub",item.Hub,allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub);item.Hub === allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}}).map((hubInfo, index) => (
+              <li key={index}>
+                Hub: {hubInfo.Hub}
+                <ul>
+                  {hubInfo.HubReprensentative.map((rep:any, repIndex:number) => (
+                    <li key={repIndex}>
+
+                      <p>Email: {rep.email}</p>
+
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+          <div className={classNames.buttonContainer}>
+            <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
+            <DefaultButton className={classNames.button} onClick={hideModalhub}>No</DefaultButton>
           </div>
         </Modal>
 
