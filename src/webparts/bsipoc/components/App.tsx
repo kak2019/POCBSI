@@ -19,7 +19,7 @@ import { Modal, Toggle } from '@fluentui/react';
 import { mergeStyles } from '@fluentui/react/lib/Styling';
 
 import { useBoolean } from "@fluentui/react-hooks";
-import {addRequest,fetchUserGroups} from '../assets/request'
+import { addRequest, fetchUserGroups } from '../assets/request'
 const dropdownStyles: Partial<IDropdownStyles> = {
   dropdown: { width: 150, margin: 10 },
 
@@ -90,7 +90,7 @@ export default memo(function App() {
   // 判断是否已经生成过文件
   const [fileExistState, setfileExistState] = React.useState(false);
   // 生成打开文件链接
-  const [filelink,setfilelink] = React.useState("")
+  const [filelink, setfilelink] = React.useState("")
   // 仍然生成文件
   // const [generareFileAgain, setGenerareFileAgain] = React.useState(false);
   // Period 选项
@@ -189,7 +189,7 @@ export default memo(function App() {
         p[key].count += Number(val[key] || 0)
       }
     })
-    console.log("selectedKeyPeriod", periodDetails, ["3434"])
+    // console.log("selectedKeyPeriod", periodDetails, ["3434"])
     //const numMonth = periodDetails.filter(item => item.periodDetails === selectedKey)
     //console.log("nm,omth", numMonth)
     for (let key in p) {
@@ -210,11 +210,25 @@ export default memo(function App() {
       })
     }
     resObj.data = resObj.data.filter((item: any) => item.C > 0)
+    //console.log("data",resObj.data)
+    //
+
     const total = resObj.data.reduce((t: number, e: any) => t + Number(e.E), 0)
     resObj.data.push({
       A: 'Total',
       E: total.toFixed(2)
     })
+
+    // 分离出包含"Package"的项和其他项
+    const packages = resObj.data.filter((item: any) => item.A.toLowerCase().includes("package"));
+    const otherItems = resObj.data.filter((item: any) => !item.A.toLowerCase().includes("package") && item.A !== 'Total');
+
+    // 对packages和其他项进行排序
+    packages.sort((a: any, b: any) => a.A.localeCompare(b.A));
+    otherItems.sort((a: any, b: any) => a.A.localeCompare(b.A));
+
+    // 合并结果并将Total项放在最后
+    resObj.data = [...packages, ...otherItems, { A: 'Total', E: total.toFixed(2) }];
     return resObj
   }
 
@@ -524,16 +538,18 @@ export default memo(function App() {
     }).then((response) => {
       console.log("hub", response.Row)
       if (response.Row?.length > 0) {
-        const hubinfo = response.Row.map(item => ({ "Hub": item.Hub, HubReprensentative: item.HubReprensentative.map((rep:any) => ({
-          id: rep.id,
-          value: rep.value,
-          title: rep.title,
-          email: rep.email,
-          sip: rep.sip,
-          picture: rep.picture,
-          jobTitle: rep.jobTitle,
-          department: rep.department,
-        }))}))
+        const hubinfo = response.Row.map(item => ({
+          "Hub": item.Hub, HubReprensentative: item.HubReprensentative.map((rep: any) => ({
+            id: rep.id,
+            value: rep.value,
+            title: rep.title,
+            email: rep.email,
+            sip: rep.sip,
+            picture: rep.picture,
+            jobTitle: rep.jobTitle,
+            department: rep.department,
+          }))
+        }))
         sethubinfosp(hubinfo)
       }
     })
@@ -679,25 +695,35 @@ export default memo(function App() {
     });
 
   };
- const submitform  =()=>{
-  if (submiting) return
-  setSubmiting(true)
-  const request = {
-    Hub:selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
-    FileMainLink:`${Site_Relative_Links}/Shared Documents/${selectedKey}/`
+  const submitform = () => {
+    if (submiting) return
+    setSubmiting(true)
+    let a = hubinfosp.filter((item) => {
+      if (selectedKeyMarket === "ALL") {
+        return true;
+      } else {
+        return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
+      }
+    })
+    // console.log("aaaaa", a)
+    const request = {
+      Hub: selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
+      FileMainLink: filelink,
+
+    }
+
+    const sp = spfi(getSP());
+    // let promiss
+    addRequest({ request }).then(async promises => {
+      console.log("promiss", promises, typeof (promises));
+      hideModalhub()
+      showModalConfirm()
+      setSubmiting(false)
+    })
+
+
+
   }
-  const sp = spfi(getSP());
-        // let promiss
-        addRequest({ request }).then(async promises => {
-            console.log("promiss", promises, typeof (promises));
-            hideModalhub()
-            showModalConfirm()
-            setSubmiting(false)
-        })
-
-
-
- }
   useEffect(() => {
     // 模拟组件加载后触发 onChange 事件
     if (marketNameOption && marketNameOption.length > 0) {
@@ -705,15 +731,15 @@ export default memo(function App() {
     }
   }, [marketNameOption]);
 
-  useEffect(()=>{
+  useEffect(() => {
     let filelink;
-    if(selectedKeyMarket==="ALL"){
+    if (selectedKeyMarket === "ALL") {
       filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/`
-    }else{
-    filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
-  }
-  setfilelink(filelink)
-  },[selectedKey,selectedKeyMarket])
+    } else {
+      filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
+    }
+    setfilelink(filelink)
+  }, [selectedKey, selectedKeyMarket])
   return (
     <>
       <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
@@ -756,7 +782,7 @@ export default memo(function App() {
 
 </Stack> */}
       <Stack style={{ margin: 10, width: 230 }}>
-      {/* //{selectedKeyPeriod} */}
+        {/* //{selectedKeyPeriod} */}
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
       </Stack>
       <Stack style={{ margin: 10, width: 230 }}>
@@ -804,33 +830,33 @@ export default memo(function App() {
           <p>You are going to send email notification to cantacts below.Please confirm if you wish to proceed</p>
           {/* </Stack> */}
           <Label>Summary File:    {selectedKey} </Label>
-          
+
           <ul>
-          
 
-          {
-             hubinfosp
-              .filter((item) => {
-                if (selectedKeyMarket === "ALL") {
-                  return true;
-                } else {
-                  return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
-                }
-              }).map((hubInfo, index) => (
-          //  hubinfosp.filter(item=>{if(selectedKeyMarket!=="All"){console.log("item.hub",item.Hub,allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub);item.Hub === allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}}).map((hubInfo, index) => (
-              <li key={index}>
-                Hub: {hubInfo.Hub}
-                <ul>
-                  {hubInfo.HubReprensentative.map((rep:any, repIndex:number) => (
-                    <li key={repIndex}>
 
-                      <p>Email: {rep.email}</p>
+            {
+              hubinfosp
+                .filter((item) => {
+                  if (selectedKeyMarket === "ALL") {
+                    return true;
+                  } else {
+                    return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
+                  }
+                }).map((hubInfo, index) => (
+                  //  hubinfosp.filter(item=>{if(selectedKeyMarket!=="All"){console.log("item.hub",item.Hub,allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub);item.Hub === allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}}).map((hubInfo, index) => (
+                  <li key={index}>
+                    Hub: {hubInfo.Hub}
+                    <ul>
+                      {hubInfo.HubReprensentative.map((rep: any, repIndex: number) => (
+                        <li key={repIndex}>
 
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
+                          <p>Email: {rep.email}</p>
+
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
           </ul>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.button} onClick={submitform}>Yes</PrimaryButton>
@@ -849,7 +875,7 @@ export default memo(function App() {
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          A record has been created and the message will be sent in a few minutes</p> 
+            A record has been created and the message will be sent in a few minutes</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.button} onClick={hideModalconfirm}>OK</DefaultButton>
