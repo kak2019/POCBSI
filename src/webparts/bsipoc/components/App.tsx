@@ -40,6 +40,7 @@ export default memo(function App() {
   const [isModalOpen, { setTrue: showModal, setFalse: hideModal }] = useBoolean(false);
   const [isModalOpenhub, { setTrue: showModalhub, setFalse: hideModalhub }] = useBoolean(false);
   const [isModalOpenConfirm, { setTrue: showModalConfirm, setFalse: hideModalconfirm }] = useBoolean(false);
+  const [isModalOpenConfirmGenerate, { setTrue: showModalConfirmGenerate, setFalse: hideModalconfirmGenerate }] = useBoolean(false);
   const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
   const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const classNames = mergeStyleSets({
@@ -391,8 +392,9 @@ export default memo(function App() {
     // 等待所有文件上传完成
     Promise.all(uploadPromises).then(() => {
       setTimeout(() => {
-        alert("All cost summaries are generated and uploaded successfully.");
-      }, 3000);
+        // alert("All cost summaries are generated and uploaded successfully.");
+        showModalConfirmGenerate()
+      }, 500);
       const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
     }).catch(err => {
@@ -881,7 +883,24 @@ export default memo(function App() {
             <DefaultButton className={classNames.button} onClick={hideModalconfirm}>OK</DefaultButton>
           </div>
         </Modal>
-
+        <Modal
+          titleAriaId={"notify generate"}
+          isOpen={isModalOpenConfirmGenerate}
+          // onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.container}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Notice</h2>
+          {/* </Stack> */}
+          <p className={classNames.paragraph}>
+          Summary files are generated successfully. Please click "View Summary File" button to check the files</p>
+          <div className={classNames.buttonContainer}>
+            {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
+            <DefaultButton className={classNames.button} onClick={hideModalconfirmGenerate}>OK</DefaultButton>
+          </div>
+        </Modal>
       </Stack>
       {/* {periodDetails} */}
 
