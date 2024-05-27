@@ -1,7 +1,8 @@
 import { spfi } from '@pnp/sp';
 import { getSP } from '../../../common/pnpjsConfig';
-
-const REQUESTSCONST = { LIST_NAME: 'Nii Cases'};
+import "@pnp/sp/webs";
+import "@pnp/sp/site-users/web";
+const REQUESTSCONST = { LIST_NAME: 'Send mail records'};
 
 const fetchById = async (arg: {
   Id: number;
@@ -48,11 +49,36 @@ const addRequest  = async (arg: {
   // });
 
   return result;
+
+
+  
 };
 
+const fetchUserGroups = async (arg: {
+  userEmail: string;
+}): Promise<string[]> => {
+  try {
+    const sp = spfi(getSP());
+    const result: string[] = [];
+    const user = await sp.web.ensureUser(arg.userEmail);
+    const userId = user.data.Id;
+    await sp.web.siteUsers
+      .getById(userId)
+      .groups()
+      .then((response) =>
+        response.map((o) => {
+          result.push(o.Title);
+        })
+      );
+    console.log(result);
+    return result;
+  } catch (err) {
+    console.log(err);
+    return Promise.reject("Error when fetch user's groups.");
+  }
+};
 
-
-export { addRequest, editRequest, fetchById};
+export { addRequest, editRequest, fetchById,fetchUserGroups};
 
 
 

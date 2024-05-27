@@ -19,6 +19,7 @@ import { Modal, Toggle } from '@fluentui/react';
 import { mergeStyles } from '@fluentui/react/lib/Styling';
 
 import { useBoolean } from "@fluentui/react-hooks";
+import {addRequest,fetchUserGroups} from '../assets/request'
 const dropdownStyles: Partial<IDropdownStyles> = {
   dropdown: { width: 150, margin: 10 },
 
@@ -34,9 +35,11 @@ const dropdownStyles: Partial<IDropdownStyles> = {
 
 
 export default memo(function App() {
+  const [submiting, setSubmiting] = React.useState<boolean>(false)
   //modal
   const [isModalOpen, { setTrue: showModal, setFalse: hideModal }] = useBoolean(false);
   const [isModalOpenhub, { setTrue: showModalhub, setFalse: hideModalhub }] = useBoolean(false);
+  const [isModalOpenConfirm, { setTrue: showModalConfirm, setFalse: hideModalconfirm }] = useBoolean(false);
   const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
   const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const classNames = mergeStyleSets({
@@ -86,6 +89,8 @@ export default memo(function App() {
   const [selectedKey, setSelectedKey] = React.useState<string>('');
   // 判断是否已经生成过文件
   const [fileExistState, setfileExistState] = React.useState(false);
+  // 生成打开文件链接
+  const [filelink,setfilelink] = React.useState("")
   // 仍然生成文件
   // const [generareFileAgain, setGenerareFileAgain] = React.useState(false);
   // Period 选项
@@ -674,7 +679,25 @@ export default memo(function App() {
     });
 
   };
+ const submitform  =()=>{
+  if (submiting) return
+  setSubmiting(true)
+  const request = {
+    Hub:selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
+    FileMainLink:`${Site_Relative_Links}/Shared Documents/${selectedKey}/`
+  }
+  const sp = spfi(getSP());
+        // let promiss
+        addRequest({ request }).then(async promises => {
+            console.log("promiss", promises, typeof (promises));
+            hideModalhub()
+            showModalConfirm()
+            setSubmiting(false)
+        })
 
+
+
+ }
   useEffect(() => {
     // 模拟组件加载后触发 onChange 事件
     if (marketNameOption && marketNameOption.length > 0) {
@@ -682,6 +705,15 @@ export default memo(function App() {
     }
   }, [marketNameOption]);
 
+  useEffect(()=>{
+    let filelink;
+    if(selectedKeyMarket==="ALL"){
+      filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/`
+    }else{
+    filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
+  }
+  setfilelink(filelink)
+  },[selectedKey,selectedKeyMarket])
   return (
     <>
       <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
@@ -724,20 +756,21 @@ export default memo(function App() {
 
 </Stack> */}
       <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={() => handleCreateFolder()}>Generate Summary File {selectedKeyPeriod}</PrimaryButton>
+      {/* //{selectedKeyPeriod} */}
+        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
       </Stack>
       <Stack style={{ margin: 10, width: 230 }}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState}
-          onClick={() => window.open(`${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`, "_blank")}>View Summary File
+          onClick={() => window.open(filelink, "_blank")}>View Summary File
         </PrimaryButton>
       </Stack>
       <Stack style={{ margin: 10, width: 230 }}>
         <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState} onClick={showModalhub}>Notify Hub Representative</PrimaryButton>
       </Stack>
       <Stack>
-        <ProgressIndicator label="Uploading files now" description="Example description" />
+        {/* <ProgressIndicator label="Uploading files now" description="Example description" /> */}
         {/* <Toggle label="Is draggable" inlineLabel onChange={toggleIsDraggable} checked={isDraggable} /> */}
-        <DefaultButton onClick={showModalhub} text="Open Modal" />
+        {/* <DefaultButton onClick={showModalhub} text="Open Modal" /> */}
         <Modal
           titleAriaId={"title"}
           isOpen={isModalOpen}
@@ -800,8 +833,26 @@ export default memo(function App() {
             ))}
           </ul>
           <div className={classNames.buttonContainer}>
-            <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
+            <PrimaryButton className={classNames.button} onClick={submitform}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModalhub}>No</DefaultButton>
+          </div>
+        </Modal>
+        <Modal
+          titleAriaId={"confirm"}
+          isOpen={isModalOpenConfirm}
+          // onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.container}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Notice</h2>
+          {/* </Stack> */}
+          <p className={classNames.paragraph}>
+          A record has been created and the message will be sent in a few minutes</p> 
+          <div className={classNames.buttonContainer}>
+            {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
+            <DefaultButton className={classNames.button} onClick={hideModalconfirm}>OK</DefaultButton>
           </div>
         </Modal>
 
