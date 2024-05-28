@@ -128,7 +128,8 @@ export default memo(function App() {
         Market: val.Market,
         Dealer: val.PartnerName,
         "Dealer ID": val.PartnerID,
-        "Dealer Type": val.DealerType,
+        // "Dealer Type": val.DealerType,
+        "PartnerType":val.PartnerType,
         "Dealer Category": val.DealerCategory,
         "Basic Package": val.BasicPackage,
         "Sales Package": val.SalesPackage,
@@ -150,10 +151,11 @@ export default memo(function App() {
       // obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       // obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
-      obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerType)] || 0) * obj['Sales Package']
+      obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.PartnerType)] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2)
       obj['Hub'] = val.Hub
       // console.log("obj3232",obj)
+      // console.log("price,ap",priceMap)
       return obj
     })
   }
@@ -184,7 +186,7 @@ export default memo(function App() {
     }
     details.map((val: any) => ({ ...val })).forEach((val: any) => {
       val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
-      val['Sales Package;' + (val['Dealer Type'])] = val['Sales Package']
+      val['Sales Package;' + (val['PartnerType'])] = val['Sales Package']
       val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
       for (let key in p) {
         p[key].count += Number(val[key] || 0)
@@ -468,10 +470,17 @@ export default memo(function App() {
       if (response.Row.length > 0) {
         const resObj: any = {}
         response.Row.forEach(val => {
-          resObj[`${val.PackageCategory};${val.DealerCategory}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
-          obj[`${val.PackageCategory};${val.DealerCategory}`] = val.Description
+          
+          if(val.PackageCategory === "Sales Package"){ 
+            resObj[`${val.PackageCategory};${val.PartnerType}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
+            obj[`${val.PackageCategory};${val.PartnerType}`] = val.Description
+          }else{
+            obj[`${val.PackageCategory};${val.DealerCategory}`] = val.Description
+            resObj[`${val.PackageCategory};${val.DealerCategory}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
+          }
+          
         })
-        console.log("resobji", resObj)
+        // console.log("resobji", resObj)
         return resObj
       }
 
