@@ -145,17 +145,20 @@ export default memo(function App() {
 
       }
       // console.log("obj",obj)
-      const keys = ['Hub Package', 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
+      //const keys = ['Hub Package', 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
+      const keys = [ 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
       obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
+      // console.log("total",obj['Total(Per Month)'])
       obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
       // obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       // obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.PartnerType)] || 0) * obj['Sales Package']
+      obj['Total(Per Month)'] += (priceMap['Hub Package;' + (val.PartnerType)] || 0) * obj['Hub Package']
       obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2)
       obj['Hub'] = val.Hub
       // console.log("obj3232",obj)
-      // console.log("price,ap",priceMap)
+      //  console.log("price,ap",priceMap)
       return obj
     })
   }
@@ -187,20 +190,29 @@ export default memo(function App() {
     details.map((val: any) => ({ ...val })).forEach((val: any) => {
       val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
       val['Sales Package;' + (val['PartnerType'])] = val['Sales Package']
-      val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
+      val['Hub Package;' + (val['PartnerType'])] = val['Hub Package']
+      if(val['LDS']>0 && val['LSS']>0){
+        val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
+        val["LDS"] = 0;
+        val["LSS"] = 0;
+      }
+      // val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
       for (let key in p) {
         p[key].count += Number(val[key] || 0)
       }
     })
+    // console.log(details,"details")
     // console.log("selectedKeyPeriod", periodDetails, ["3434"])
     //const numMonth = periodDetails.filter(item => item.periodDetails === selectedKey)
     //console.log("nm,omth", numMonth)
+    // console.log(p,"P")
     for (let key in p) {
       const isLDSorLSS = key === 'LDS' || key === 'LSS';
-
+      const isLDSandLSS = key ==="LDS+LSS"
       // 检查 LDS 和 LSS 是否都有值
       const bothLDSandLSSHaveValues = p['LDS'].count > 0 && p['LSS'].count > 0;
-      if (p[key].count === 0 || (isLDSorLSS && bothLDSandLSSHaveValues)) continue;
+      // if (p[key].count === 0 || ((!isLDSorLSS) && bothLDSandLSSHaveValues)) continue;
+      if (p[key].count === 0 ) continue;
 
       resObj.data.push({
         // A: key.split(';')[0],
@@ -471,7 +483,7 @@ export default memo(function App() {
         const resObj: any = {}
         response.Row.forEach(val => {
           
-          if(val.PackageCategory === "Sales Package"){ 
+          if(val.PackageCategory === "Sales Package" || val.PackageCategory === "Hub Package" ){ 
             resObj[`${val.PackageCategory};${val.PartnerType}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
             obj[`${val.PackageCategory};${val.PartnerType}`] = val.Description
           }else{
