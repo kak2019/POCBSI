@@ -192,7 +192,7 @@ export default memo(function App() {
       val['Sales Package;' + (val['PartnerType'])] = val['Sales Package']
       val['Hub Package;' + (val['PartnerType'])] = val['Hub Package']
       if(val['LDS']>0 && val['LSS']>0){
-        val['LDS+LSS'] = Math.min(val['LDS'], val['LSS'])
+        val['Dealer Light Package;'] = Math.min(val['LDS'], val['LSS'])
         val["LDS"] = 0;
         val["LSS"] = 0;
       }
@@ -300,8 +300,10 @@ export default memo(function App() {
     // 创建一个数组来存储所有的上传Promise
     const uploadPromises: any[] = [];
 
-    const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/UD BSI_Output Template.xlsx").getBuffer();
-
+    // const buffer1 = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/UD BSI_Output Template.xlsx").getBuffer();
+    // console.log(buffer1,"buffer1")
+    const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/BSITemplate.xlsx").getBuffer();
+    console.log(buffer,"buffer")
     let selectCountry = allCountry.slice(0)
     if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL") {
       console.log(selectedKeyMarket, "erer")
@@ -320,7 +322,7 @@ export default memo(function App() {
       console.log("country", countryOrders)
       /* summary */
       const workbookTemplate = XLSX.read(buffer, { type: 'buffer' });
-      const summaryTemplateName = workbookTemplate.SheetNames[1]
+      const summaryTemplateName = workbookTemplate.SheetNames[0]
       const workSheetSummaryTpt = workbookTemplate.Sheets[summaryTemplateName]
       // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
 
@@ -329,6 +331,7 @@ export default memo(function App() {
       workSheetSummaryTpt['B2'] = { v: tongji.Country }
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
       workSheetSummaryTpt['E2'] = { v: selectedKeyPeriod }
+    
       for (let i = 5; i < tongji.data.length + 5; i++) {
         workSheetSummaryTpt['A' + i] = { v: tongji.data[i - 5].A }
         workSheetSummaryTpt['B' + i] = { v: tongji.data[i - 5].B }
@@ -350,7 +353,7 @@ export default memo(function App() {
       //     };
       //   }
       // });
-      const summaryTemplateName2 = workbookTemplate.SheetNames[3]
+      const summaryTemplateName2 = workbookTemplate.SheetNames[1]
       const workSheetDetails = workbookTemplate.Sheets[summaryTemplateName2]
       const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
       for (let i = 3; i < countryOrders.length + 3; i++) {
