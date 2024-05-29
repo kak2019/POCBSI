@@ -144,12 +144,24 @@ export default memo(function App() {
         "Pardot": val.Pardot,
 
       }
-      // console.log("obj",obj)
-      //const keys = ['Hub Package', 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
+      
       const keys = [ 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
-      obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
-      // console.log("total",obj['Total(Per Month)'])
-      obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
+    
+      if (obj['LDS']>0 && obj['LSS']>0 ) {
+        console.log("Price Map4324",priceMap,obj['LDS'],obj['LDS'],priceMap['Dealer Light Package;'],(priceMap['Dealer Light Package;'] || 0) * Math.min(obj['LDS'], obj['LSS']))
+        obj['Total(Per Month)'] = Number((priceMap['Dealer Light Package;'] || 0) * Math.min(obj['LDS'], obj['LSS']))
+        obj['Total(Per Month)'] += keys.reduce((sum, key) => {
+          if (key === 'LDS' || key === 'LSS') {
+              return sum; // 跳过LDS和LSS
+          }
+          return sum + (priceMap[key] || 0) * (obj[key] || 0);
+      }, 0);
+    }else(obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0))
+    
+   
+      //obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
+      //console.log("total",obj['Total(Per Month)'])
+      //obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
       // obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       // obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.DealerCategory || 'NA')] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
@@ -159,6 +171,9 @@ export default memo(function App() {
       obj['Hub'] = val.Hub
       // console.log("obj3232",obj)
       //  console.log("price,ap",priceMap)
+
+
+   
       return obj
     })
   }
