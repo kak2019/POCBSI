@@ -20,10 +20,6 @@ import { mergeStyles } from '@fluentui/react/lib/Styling';
 
 import { useBoolean } from "@fluentui/react-hooks";
 import { addRequest, fetchUserGroups } from '../assets/request'
-const dropdownStyles: Partial<IDropdownStyles> = {
-  dropdown: { width: 150, margin: 10 },
-
-};
 
 // const options: IDropdownOption[] = [
 
@@ -32,6 +28,12 @@ const dropdownStyles: Partial<IDropdownStyles> = {
 //   { key: 'Q3', text: 'Q3' },
 //   { key: 'Q4', text: 'Q4' },
 // ];
+
+const dropdownStyles: Partial<IDropdownStyles> = {
+  root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 230, marginRight: 60, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
+  dropdown: { ':focus::after': { border: 'none' }, width: 230 },
+  title: { border: 'none', background: 'none' }
+};
 
 
 export default memo(function App() {
@@ -45,17 +47,13 @@ export default memo(function App() {
   const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const classNames = mergeStyleSets({
     modal: {
-      width: '90%',
-      maxwidth: 400,
+      width: 500,
+      maxwidth: 500,
       margin: 'auto',
       padding: 20, // 增加内边距
       boxSizing: 'border-box', // 确保padding包含在宽度内
-    },
-    container: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-
+      borderRadius: '6px',
+      overflow: 'hidden',
     },
     header: {
       textAlign: 'center',
@@ -70,8 +68,20 @@ export default memo(function App() {
       marginTop: 10,
     },
     button: {
+      border: '1px solid #bbbaba',
       marginLeft: 10,
-      marginRight: 10
+      marginRight: 10,
+      borderRadius: '6px',
+    },
+    primaryButton: {
+      borderRadius: '6px',
+      color: '#fff',
+      background: '#00829B',
+      border: '1px solid #00829B',
+      ":hover": {
+        border: '1px solid #046477',
+        background: '#046477'
+      }
     }
   });
   //
@@ -129,7 +139,7 @@ export default memo(function App() {
         Dealer: val.PartnerName,
         "Dealer ID": val.PartnerID,
         // "Dealer Type": val.DealerType,
-        "PartnerType":val.PartnerType,
+        "PartnerType": val.PartnerType,
         "Dealer Category": val.DealerCategory,
         "Basic Package": val.BasicPackage,
         "Sales Package": val.SalesPackage,
@@ -144,21 +154,21 @@ export default memo(function App() {
         "Pardot": val.Pardot,
 
       }
-      
-      const keys = [ 'CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
-    
-      if (obj['LDS']>0 && obj['LSS']>0 ) {
-        console.log("Price Map4324",priceMap,obj['LDS'],obj['LDS'],priceMap['Dealer Light Package;'],(priceMap['Dealer Light Package;'] || 0) * Math.min(obj['LDS'], obj['LSS']))
+
+      const keys = ['CPQ', 'UD CM', 'Argus 365', 'UDCP', 'SeMA', 'LDS', 'LSS', 'Pardot']
+
+      if (obj['LDS'] > 0 && obj['LSS'] > 0) {
+        console.log("Price Map4324", priceMap, obj['LDS'], obj['LDS'], priceMap['Dealer Light Package;'], (priceMap['Dealer Light Package;'] || 0) * Math.min(obj['LDS'], obj['LSS']))
         obj['Total(Per Month)'] = Number((priceMap['Dealer Light Package;'] || 0) * Math.min(obj['LDS'], obj['LSS']))
         obj['Total(Per Month)'] += keys.reduce((sum, key) => {
           if (key === 'LDS' || key === 'LSS') {
-              return sum; // 跳过LDS和LSS
+            return sum; // 跳过LDS和LSS
           }
           return sum + (priceMap[key] || 0) * (obj[key] || 0);
-      }, 0);
-    }else(obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0))
-    
-   
+        }, 0);
+      } else (obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0))
+
+
       //obj['Total(Per Month)'] = keys.reduce((sum, key) => sum + (priceMap[key] || 0) * obj[key], 0)
       //console.log("total",obj['Total(Per Month)'])
       //obj['Total(Per Month)'] -= 100 * Math.min(obj['LDS'], obj['LSS'])
@@ -173,7 +183,7 @@ export default memo(function App() {
       //  console.log("price,ap",priceMap)
 
 
-   
+
       return obj
     })
   }
@@ -206,7 +216,7 @@ export default memo(function App() {
       val['Basic Package;' + val['Dealer Category']] = val['Basic Package']
       val['Sales Package;' + (val['PartnerType'])] = val['Sales Package']
       val['Hub Package;' + (val['PartnerType'])] = val['Hub Package']
-      if(val['LDS']>0 && val['LSS']>0){
+      if (val['LDS'] > 0 && val['LSS'] > 0) {
         val['Dealer Light Package;'] = Math.min(val['LDS'], val['LSS'])
         val["LDS"] = 0;
         val["LSS"] = 0;
@@ -223,11 +233,11 @@ export default memo(function App() {
     // console.log(p,"P")
     for (let key in p) {
       const isLDSorLSS = key === 'LDS' || key === 'LSS';
-      const isLDSandLSS = key ==="LDS+LSS"
+      const isLDSandLSS = key === "LDS+LSS"
       // 检查 LDS 和 LSS 是否都有值
       const bothLDSandLSSHaveValues = p['LDS'].count > 0 && p['LSS'].count > 0;
       // if (p[key].count === 0 || ((!isLDSorLSS) && bothLDSandLSSHaveValues)) continue;
-      if (p[key].count === 0 ) continue;
+      if (p[key].count === 0) continue;
 
       resObj.data.push({
         // A: key.split(';')[0],
@@ -273,7 +283,7 @@ export default memo(function App() {
       worksheet.getCell(cell).fill = {
         type: 'pattern',
         pattern: 'solid',
-        bgColor: { argb: 'FFA1C1E5' }
+        fgColor: { argb: 'FFA1C1E5' }
       }
     })
 
@@ -283,12 +293,12 @@ export default memo(function App() {
       worksheetDetail.getCell(z + '2').fill = {
         type: 'pattern',
         pattern: 'solid',
-        bgColor: { argb: 'FFA1C1E5' }
+        fgColor: { argb: 'FFA1C1E5' }
       }
       worksheetDetail.getCell(z + '3').fill = {
         type: 'pattern',
         pattern: 'solid',
-        bgColor: { argb: 'FFA1C1E5' }
+        fgColor: { argb: 'FFA1C1E5' }
       }
     })
 
@@ -318,7 +328,7 @@ export default memo(function App() {
     // const buffer1 = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/UD BSI_Output Template.xlsx").getBuffer();
     // console.log(buffer1,"buffer1")
     const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/BSITemplate.xlsx").getBuffer();
-    console.log(buffer,"buffer")
+    console.log(buffer, "buffer")
     let selectCountry = allCountry.slice(0)
     if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL") {
       console.log(selectedKeyMarket, "erer")
@@ -346,7 +356,7 @@ export default memo(function App() {
       workSheetSummaryTpt['B2'] = { v: tongji.Country }
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
       workSheetSummaryTpt['E2'] = { v: selectedKeyPeriod }
-    
+
       for (let i = 5; i < tongji.data.length + 5; i++) {
         workSheetSummaryTpt['A' + i] = { v: tongji.data[i - 5].A }
         workSheetSummaryTpt['B' + i] = { v: tongji.data[i - 5].B }
@@ -500,15 +510,15 @@ export default memo(function App() {
       if (response.Row.length > 0) {
         const resObj: any = {}
         response.Row.forEach(val => {
-          
-          if(val.PackageCategory === "Sales Package" || val.PackageCategory === "Hub Package" ){ 
+
+          if (val.PackageCategory === "Sales Package" || val.PackageCategory === "Hub Package") {
             resObj[`${val.PackageCategory};${val.PartnerType}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
             obj[`${val.PackageCategory};${val.PartnerType}`] = val.Description
-          }else{
+          } else {
             obj[`${val.PackageCategory};${val.DealerCategory}`] = val.Description
             resObj[`${val.PackageCategory};${val.DealerCategory}`] = val.MonthlyPrice_x0028_USD_x0029_ * 1
           }
-          
+
         })
         // console.log("resobji", resObj)
         return resObj
@@ -781,23 +791,27 @@ export default memo(function App() {
     }
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket])
+
+  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
+  const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
+
   return (
     <>
       <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
 
 
 
-      <Stack horizontal style={{ width: 600, marginLeft: 10 }}>
-        <Label style={{ marginTop: 10, width: 100, whiteSpace: 'nowarp' }}>Select Period</Label>
+      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 10 }}>
+        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>Select Period</Label>
         <Dropdown
           options={periodNameOption}
           styles={dropdownStyles}
           onChange={handleDropdownChange_Period}
         />
-        {selectedKeyPeriod && <Label style={{ marginTop: 10 }}>Period Details: {selectedKeyPeriod}</Label>}
+        {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
       </Stack>
-      <Stack horizontal style={{ width: 600, marginLeft: 10 }}>
-        <Label style={{ marginTop: 10, width: 100, whiteSpace: 'nowarp' }}>Select Market</Label>
+      <Stack horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 10 }}>
+        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>Select Market</Label>
         <Dropdown
           options={marketNameOption}
           styles={dropdownStyles}
@@ -806,7 +820,7 @@ export default memo(function App() {
           defaultSelectedKey={"ALL"}
         />
 
-        {selectedKeyMarket && <Label style={{ marginTop: 10 }}>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>}
+        {selectedKeyMarket && <Label>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>}
       </Stack>
       {/* <Stack style={{marginLeft:30}}>
           This is for Test
@@ -822,17 +836,34 @@ export default memo(function App() {
         />
 
 </Stack> */}
-      <Stack style={{ margin: 10, width: 230 }}>
-        {/* //{selectedKeyPeriod} */}
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
-      </Stack>
-      <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState}
-          onClick={() => window.open(filelink, "_blank")}>View Summary File
-        </PrimaryButton>
-      </Stack>
-      <Stack style={{ margin: 10, width: 230 }}>
-        <PrimaryButton style={{ marginTop: 10 }} disabled={excel.length === 0 || selectedKey === '' || !fileExistState} onClick={showModalhub}>Notify Hub Representative</PrimaryButton>
+      <Stack verticalAlign="start" style={{ marginTop: 20 }}>
+        <PrimaryButton style={{
+          marginTop:15,
+          width: 350,
+          border: !isDisabled1 && '1px solid #00829B',
+          borderRadius: '6px',
+          color: !isDisabled1 && '#fff',
+          background: !isDisabled1 && '#00829B'
+        }} disabled={isDisabled1} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
+        <PrimaryButton style={{
+          marginTop:15,
+          width: 350,
+          // marginLeft: '20px', 
+          borderRadius: '6px',
+          border: !isDisabled2 && '1px solid #00829B',
+          color: !isDisabled2 && '#fff',
+          background: !isDisabled2 && '#00829B'
+        }} disabled={isDisabled2}
+          onClick={() => window.open(filelink, "_blank")}>View Summary File</PrimaryButton>
+        <PrimaryButton style={{
+          marginTop:15,
+          width: 350,
+          // marginLeft: '20px', 
+          borderRadius: '6px',
+          border: !isDisabled2 && '1px solid #00829B',
+          color: !isDisabled2 && '#fff',
+          background: !isDisabled2 && '#00829B'
+        }} disabled={isDisabled2} onClick={showModalhub}>Notify Hub Representative</PrimaryButton>
       </Stack>
       <Stack>
         {/* <ProgressIndicator label="Uploading files now" description="Example description" /> */}
@@ -843,7 +874,7 @@ export default memo(function App() {
           isOpen={isModalOpen}
           // onDismiss={hideModal}
           isBlocking={false}
-          containerClassName={classNames.container}
+          containerClassName={classNames.modal}
         // dragOptions={isDraggable ? dragOptions : undefined}
         >
           {/* <Stack horizontalAlign="center" > */}
@@ -854,7 +885,7 @@ export default memo(function App() {
               Choosing to re-generate will overwrite the existing files.</p>
           <p className={classNames.paragraph}>Please confirm if you wish to proceed.</p>
           <div className={classNames.buttonContainer}>
-            <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
+            <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
           </div>
         </Modal>
@@ -863,44 +894,46 @@ export default memo(function App() {
           isOpen={isModalOpenhub}
           // onDismiss={hideModal}
           isBlocking={false}
-          containerClassName={classNames.container}
+          containerClassName={classNames.modal}
         // dragOptions={isDraggable ? dragOptions : undefined}
         >
-          {/* <Stack horizontalAlign="center" > */}
-          <h2 className={classNames.header}>Hub Notify</h2>
-          <p>You are going to send email notification to cantacts below.Please confirm if you wish to proceed</p>
-          {/* </Stack> */}
-          <Label>Summary File:    {selectedKey} </Label>
+          <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            {/* <Stack horizontalAlign="center" > */}
+            <h2 className={classNames.header}>Hub Notify</h2>
+            <p>You are going to send email notification to cantacts below.Please confirm if you wish to proceed</p>
+            {/* </Stack> */}
+            <Label>Summary File:    {selectedKey} </Label>
 
-          <ul>
+            <ul>
 
 
-            {
-              hubinfosp
-                .filter((item) => {
-                  if (selectedKeyMarket === "ALL") {
-                    return true;
-                  } else {
-                    return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
-                  }
-                }).map((hubInfo, index) => (
-                  //  hubinfosp.filter(item=>{if(selectedKeyMarket!=="All"){console.log("item.hub",item.Hub,allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub);item.Hub === allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}}).map((hubInfo, index) => (
-                  <li key={index}>
-                    Hub: {hubInfo.Hub}
-                    <ul>
-                      {hubInfo.HubReprensentative.map((rep: any, repIndex: number) => (
-                        <li key={repIndex}>
+              {
+                hubinfosp
+                  .filter((item) => {
+                    if (selectedKeyMarket === "ALL") {
+                      return true;
+                    } else {
+                      return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
+                    }
+                  }).map((hubInfo, index) => (
+                    //  hubinfosp.filter(item=>{if(selectedKeyMarket!=="All"){console.log("item.hub",item.Hub,allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub);item.Hub === allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}}).map((hubInfo, index) => (
+                    <li key={index}>
+                      Hub: {hubInfo.Hub}
+                      <ul>
+                        {hubInfo.HubReprensentative.map((rep: any, repIndex: number) => (
+                          <li key={repIndex}>
 
-                          <p>Email: {rep.email}</p>
+                            <p>Email: {rep.email}</p>
 
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-          </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+            </ul>
+          </div>
           <div className={classNames.buttonContainer}>
-            <PrimaryButton className={classNames.button} onClick={submitform}>Yes</PrimaryButton>
+            <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModalhub}>No</DefaultButton>
           </div>
         </Modal>
@@ -909,7 +942,7 @@ export default memo(function App() {
           isOpen={isModalOpenConfirm}
           // onDismiss={hideModal}
           isBlocking={false}
-          containerClassName={classNames.container}
+          containerClassName={classNames.modal}
         // dragOptions={isDraggable ? dragOptions : undefined}
         >
           {/* <Stack horizontalAlign="center" > */}
@@ -919,7 +952,7 @@ export default memo(function App() {
             A record has been created and the message will be sent in a few minutes</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
-            <DefaultButton className={classNames.button} onClick={hideModalconfirm}>OK</DefaultButton>
+            <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirm}>OK</DefaultButton>
           </div>
         </Modal>
         <Modal
@@ -927,17 +960,17 @@ export default memo(function App() {
           isOpen={isModalOpenConfirmGenerate}
           // onDismiss={hideModal}
           isBlocking={false}
-          containerClassName={classNames.container}
+          containerClassName={classNames.modal}
         // dragOptions={isDraggable ? dragOptions : undefined}
         >
           {/* <Stack horizontalAlign="center" > */}
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          Summary files are generated successfully. Please click "View Summary File" button to check the files</p>
+            Summary files are generated successfully. Please click "View Summary File" button to check the files</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
-            <DefaultButton className={classNames.button} onClick={hideModalconfirmGenerate}>OK</DefaultButton>
+            <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirmGenerate}>OK</DefaultButton>
           </div>
         </Modal>
       </Stack>
