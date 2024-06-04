@@ -177,7 +177,7 @@ export default memo(function App() {
       obj['Total(Per Month)'] += (priceMap['Basic Package;' + val.DealerCategory] || 0) * obj['Basic Package']
       obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.PartnerType)] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Hub Package;' + (val.PartnerType)] || 0) * obj['Hub Package']
-      obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2)
+      obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2) * 1
       obj['Hub'] = val.Hub
       // console.log("obj3232",obj)
       //  console.log("price,ap",priceMap)
@@ -245,8 +245,8 @@ export default memo(function App() {
         A: map[key],
         B: null,
         C: p[key].count * numMonth,
-        D: (p[key].price).toFixed(2),
-        E: (p[key].count * numMonth * p[key].price).toFixed(2)
+        D: (p[key].price) * 1,
+        E: (p[key].count * numMonth * p[key].price) * 1
       })
     }
     resObj.data = resObj.data.filter((item: any) => item.C > 0)
@@ -256,7 +256,7 @@ export default memo(function App() {
     const total = resObj.data.reduce((t: number, e: any) => t + Number(e.E), 0)
     resObj.data.push({
       A: 'Total',
-      E: total.toFixed(2)
+      E: total.toFixed(2) * 1
     })
 
     // 分离出包含"Package"的项和其他项
@@ -268,7 +268,7 @@ export default memo(function App() {
     otherItems.sort((a: any, b: any) => a.A.localeCompare(b.A));
 
     // 合并结果并将Total项放在最后
-    resObj.data = [...packages, ...otherItems, { A: 'Total', E: total.toFixed(2) }];
+    resObj.data = [...packages, ...otherItems, { A: 'Total', E: total.toFixed(2) * 1 }];
     return resObj
   }
 
@@ -278,6 +278,39 @@ export default memo(function App() {
     const workbook = new Excel.Workbook();
     await workbook.xlsx.load(buffer); // 加载Excel文件
     const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
+
+    workbook.eachSheet(async (worksheet, sheetId) => {
+
+      worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
+        row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
+          if ( !(colNumber >= 6 && colNumber <= 16) || colNumber === 3) {
+            if (cell.value !== null && cell.value.toString().trim() !== "") {
+              // 尝试将单元格内容转换为数字
+              let numericValue = parseFloat(cell.value);
+              if (!isNaN(numericValue)) {
+                // 是数字，则设置为数字类型并应用格式
+                cell.numFmt = '0.00'; // 设置为两位小数的格式
+                cell.value = numericValue; // 更新单元格值为转换后的数字
+              }
+            }else {
+              // 单元格内容为空或仅包含空白字符，不做改动，保留原样
+              cell.value = cell.value;
+            }
+          }else{
+            let numericValue = parseFloat(cell.value);
+            if (!isNaN(numericValue)) {
+              // 是数字，则设置为数字类型并应用格式
+              cell.numFmt = '0'; // 设置为没有小数的格式
+              cell.value = numericValue; // 更新单元格值为转换后的数字
+            }
+          }
+        });
+      });
+
+      // 如果需要保存更改，取消下面注释
+      // await worksheet.commit();
+      // await workbook.xlsx.writeFile(filePath);
+    });
 
     ['A4', 'B4', 'C4', 'D4', 'E4'].forEach(cell => {
       worksheet.getCell(cell).fill = {
@@ -302,9 +335,12 @@ export default memo(function App() {
       }
     })
 
+
+
+
     // 将修改后的工作簿写回Blob
     const updatedBuffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([updatedBuffer], { type: 'application/octet-stream' });
+    const blob = new Blob([updatedBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     return blob
   }
 
@@ -336,7 +372,7 @@ export default memo(function App() {
     }
 
     // 遍历所有国家
-    selectCountry.forEach(Market => {
+    selectCountry.forEach(async Market => {
       // 筛选出该国家的订单
       // console.log("2exe",excel)
       const countryOrders = excel.filter(order => order.Market === Market);
@@ -346,25 +382,26 @@ export default memo(function App() {
       }
       console.log("country", countryOrders)
       /* summary */
-      const workbookTemplate = XLSX.read(buffer, { type: 'buffer' });
-      const summaryTemplateName = workbookTemplate.SheetNames[0]
-      const workSheetSummaryTpt = workbookTemplate.Sheets[summaryTemplateName]
+      const workbookTemplate = new Excel.Workbook();
+      await workbookTemplate.xlsx.load(buffer); // 加载Excel文件
+      const workSheetSummaryTpt = workbookTemplate.getWorksheet(1); // 获取第一个工作表
       // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
 
       const tongji = calcToSummary(countryOrders, priceTable, nameObj, periodDetails)
       // \console.log("tongji",tongji)
-      workSheetSummaryTpt['B2'] = { v: tongji.Country }
+      workSheetSummaryTpt.getCell('B2').value = tongji.Country
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
-      workSheetSummaryTpt['E2'] = { v: selectedKeyPeriod }
+      workSheetSummaryTpt.getCell('E2').value = selectedKeyPeriod
 
       for (let i = 5; i < tongji.data.length + 5; i++) {
-        workSheetSummaryTpt['A' + i] = { v: tongji.data[i - 5].A }
-        workSheetSummaryTpt['B' + i] = { v: tongji.data[i - 5].B }
-        workSheetSummaryTpt['C' + i] = { v: tongji.data[i - 5].C }
-        workSheetSummaryTpt['D' + i] = { v: tongji.data[i - 5].D }
-        workSheetSummaryTpt['E' + i] = { v: tongji.data[i - 5].E }
+        const value = tongji.data[i - 5];
+        workSheetSummaryTpt.getCell('A' + i).value = value.A;
+        workSheetSummaryTpt.getCell('B' + i).value = value.B;
+        workSheetSummaryTpt.getCell('C' + i).value = value.C;
+        workSheetSummaryTpt.getCell('D' + i).value = value.D;
+        workSheetSummaryTpt.getCell('E' + i).value = value.E;
       }
-      workSheetSummaryTpt['!ref'] = 'A1:G20'
+      // workSheetSummaryTpt['!ref'] = 'A1:G20';
       /* summary */
 
       // 创建工作表
@@ -378,33 +415,37 @@ export default memo(function App() {
       //     };
       //   }
       // });
-      const summaryTemplateName2 = workbookTemplate.SheetNames[1]
-      const workSheetDetails = workbookTemplate.Sheets[summaryTemplateName2]
+      const workSheetDetails = workbookTemplate.getWorksheet(2)
+      for (let i = 1; i <= 100; i++) {
+        workSheetDetails.addRow([]);
+      }
       const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
       for (let i = 3; i < countryOrders.length + 3; i++) {
         let j = 0;
         for (let key in countryOrders[i - 3]) {
-          workSheetDetails[zimu[j] + (i + 1)] = { v: countryOrders[i - 3][key] }
+          if (!zimu[j]) break
+          workSheetDetails.getCell(zimu[j] + (i + 1)).value = countryOrders[i - 3][key];
           j++
         }
       }
 
 
       const total = countryOrders.reduce((t: number, item: any) => t + Number(item['Total(Per Month)']), 0)
-      workSheetDetails['A' + (countryOrders.length + 4)] = { v: 'Total' }
-      workSheetDetails['Q' + (countryOrders.length + 4)] = { v: total.toFixed(2) }
+      workSheetDetails.getCell('A' + (countryOrders.length + 4)).value = 'Total';
+      workSheetDetails.getCell('Q' + (countryOrders.length + 4)).value = total.toFixed(2);
 
-      workSheetDetails['!ref'] = 'A1:R100'
+      // workSheetDetails['!ref'] = 'A1:R100'
 
       // 创建工作簿
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, workSheetSummaryTpt, "Market Summary");
-      // XLSX.utils.book_append_sheet(workbook, worksheet, "Package Details");
-      XLSX.utils.book_append_sheet(workbook, workSheetDetails, "Package Details");
+      // const workbook = XLSX.utils.book_new();
+      // XLSX.utils.book_append_sheet(workbook, workSheetSummaryTpt, "Market Summary");
+      // // XLSX.utils.book_append_sheet(workbook, worksheet, "Package Details");
+      // XLSX.utils.book_append_sheet(workbook, workSheetDetails, "Package Details");
 
-      // 将工作簿转换为Blob
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      // // 将工作簿转换为Blob
+      // const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       // const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const wbout = await workbookTemplate.xlsx.writeBuffer()
 
       changeStyle(wbout).then(blob => {
         doesFolderExist("Shared Documents", `${selectedKey}/${countryOrders[0].Hub}`).then(async exists => {
@@ -546,11 +587,11 @@ export default memo(function App() {
       if (response.Row?.length > 0) {
 
         setPeriodNameOption(
-          response.Row.filter(item => item.AvailableforSelection === "Yes").map(period => ({
+          response.Row.filter(item => item.AvailableforSelection === "是" || item.AvailableforSelection === "Yes").map(period => ({
             key: period.PeriodDetails,
             text: period.PeriodName
           })))
-        const details = response.Row.filter(item => item.AvailableforSelection === "Yes").map(period => ({
+        const details = response.Row.filter(item => item.AvailableforSelection === "是" || item.AvailableforSelection === "Yes").map(period => ({
           key: period.PeriodDetails,
           text: period.PeriodName,
           nummonth: period.NumberofMonths
@@ -797,7 +838,7 @@ export default memo(function App() {
 
   return (
     <>
-      <h1 style={{ margin: 10 }}>Business System Price Calculation</h1>
+      <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
 
 
 
@@ -838,7 +879,7 @@ export default memo(function App() {
 </Stack> */}
       <Stack verticalAlign="start" style={{ marginTop: 20 }}>
         <PrimaryButton style={{
-          marginTop:15,
+          marginTop: 15,
           width: 350,
           border: !isDisabled1 && '1px solid #00829B',
           borderRadius: '6px',
@@ -846,9 +887,8 @@ export default memo(function App() {
           background: !isDisabled1 && '#00829B'
         }} disabled={isDisabled1} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
         <PrimaryButton style={{
-          marginTop:15,
+          marginTop: 15,
           width: 350,
-          // marginLeft: '20px', 
           borderRadius: '6px',
           border: !isDisabled2 && '1px solid #00829B',
           color: !isDisabled2 && '#fff',
@@ -856,9 +896,8 @@ export default memo(function App() {
         }} disabled={isDisabled2}
           onClick={() => window.open(filelink, "_blank")}>View Summary File</PrimaryButton>
         <PrimaryButton style={{
-          marginTop:15,
+          marginTop: 15,
           width: 350,
-          // marginLeft: '20px', 
           borderRadius: '6px',
           border: !isDisabled2 && '1px solid #00829B',
           color: !isDisabled2 && '#fff',
