@@ -797,7 +797,7 @@ export default memo(function App() {
 
   return (
     <>
-      <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
+      <h1 style={{ margin: 10 }}>Business System Price Calculation</h1>
 
 
 
