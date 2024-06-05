@@ -283,24 +283,26 @@ export default memo(function App() {
 
       worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
         row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
-          if ( !(colNumber >= 6 && colNumber <= 16) || colNumber === 3) {
+          if ( colNumber >= 6 && colNumber <= 16  ) {
             if (cell.value !== null && cell.value.toString().trim() !== "") {
               // 尝试将单元格内容转换为数字
               let numericValue = parseFloat(cell.value);
               if (!isNaN(numericValue)) {
                 // 是数字，则设置为数字类型并应用格式
-                cell.numFmt = '0.00'; // 设置为两位小数的格式
+                cell.numFmt = '0'; // 设置为没有小数的格式
                 cell.value = numericValue; // 更新单元格值为转换后的数字
               }
             }else {
               // 单元格内容为空或仅包含空白字符，不做改动，保留原样
               cell.value = cell.value;
             }
+          }else if(colNumber===5){
+            cell.value = cell.value;
           }else{
             let numericValue = parseFloat(cell.value);
             if (!isNaN(numericValue)) {
               // 是数字，则设置为数字类型并应用格式
-              cell.numFmt = '0'; // 设置为没有小数的格式
+              cell.numFmt = '0.00'; // 设置为两位小数的格式
               cell.value = numericValue; // 更新单元格值为转换后的数字
             }
           }
@@ -308,8 +310,8 @@ export default memo(function App() {
       });
 
       // 如果需要保存更改，取消下面注释
-      // await worksheet.commit();
-      // await workbook.xlsx.writeFile(filePath);
+      //await worksheet.commit();
+      //await workbook.xlsx.writeFile(filePath);
     });
 
     ['A4', 'B4', 'C4', 'D4', 'E4'].forEach(cell => {
@@ -392,7 +394,8 @@ export default memo(function App() {
       workSheetSummaryTpt.getCell('B2').value = tongji.Country
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
       workSheetSummaryTpt.getCell('E2').value = selectedKeyPeriod
-
+      // console.log("selectedKeyPeriod",selectedKeyPeriod)
+      
       for (let i = 5; i < tongji.data.length + 5; i++) {
         const value = tongji.data[i - 5];
         workSheetSummaryTpt.getCell('A' + i).value = value.A;
