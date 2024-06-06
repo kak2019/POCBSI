@@ -941,8 +941,8 @@ export default memo(function App() {
         >
           <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {/* <Stack horizontalAlign="center" > */}
-            <h2 className={classNames.header}>Hub Notify</h2>
-            <p>You are going to send email notification to cantacts below.Please confirm if you wish to proceed</p>
+            {/* <h2 className={classNames.header}>Hub Notify</h2> */}
+            <p>You are going to send email notification to cantacts below. Please confirm if you wish to proceed</p>
             {/* </Stack> */}
             <Label>Summary File:    {selectedKey} </Label>
 
@@ -991,7 +991,7 @@ export default memo(function App() {
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            A record has been created and the message will be sent in a few minutes</p>
+          The email may take a few minutes to be sent. Please be aware of the email notification.</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirm}>OK</DefaultButton>
