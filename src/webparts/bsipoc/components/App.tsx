@@ -812,7 +812,7 @@ export default memo(function App() {
     addRequest({ request }).then(async promises => {
       console.log("promiss", promises, typeof (promises));
       hideModalhub()
-      showModalConfirm()
+      //showModalConfirm()
       setSubmiting(false)
     })
 
@@ -942,7 +942,7 @@ export default memo(function App() {
           <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {/* <Stack horizontalAlign="center" > */}
             {/* <h2 className={classNames.header}>Hub Notify</h2> */}
-            <p>You are going to send email notification to cantacts below. Please confirm if you wish to proceed</p>
+            <p>You are going to send email notification to cantacts below. Please confirm if you wish to proceed.</p>
             {/* </Stack> */}
             <Label>Summary File:    {selectedKey} </Label>
 
@@ -973,6 +973,8 @@ export default memo(function App() {
                     </li>
                   ))}
             </ul>
+            <p className={classNames.paragraph}>
+          Please be aware that there might be a few minutes delay to send the email.</p>
           </div>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
@@ -991,7 +993,7 @@ export default memo(function App() {
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          The email may take a few minutes to be sent. Please be aware of the email notification.</p>
+          Please be aware that there might be a few minutes delay to send the email.</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirm}>OK</DefaultButton>
