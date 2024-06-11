@@ -1,0 +1,78 @@
+@import '~office-ui-fabric-react/dist/sass/References.scss';
+
+:global{
+  * {
+    margin: 0;
+    box-sizing: border-box;
+  }
+}
+
+.uploadPage {
+  overflow: hidden;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  background: #E5E5E5;
+  width: 100%;
+  height: 85vh;
+  &.teams {
+    font-family: $ms-font-family-fallbacks;
+  }
+}
+
+.header {
+  height: 90px;
+  background-color: #000;
+}
+
+.content {
+  padding-top: 47px;
+  padding-left: 100px;
+  padding-right: 100px;
+  margin-bottom: '24px'
+}
+
+.title {
+  font-size: 28px;
+  color:#000;
+  //margin-top: 24px;
+  margin-top: 4px;
+  //margin-bottom: 34PX;
+  margin-bottom: 4PX;
+}
+
+.subTitle {
+  font-size: 12px;
+  color: #4D4E53;
+}
+
+.uploadBox {
+  width: 100%;
+  padding: 32px;
+  border: 1px dashed #D6D3D0;
+  background: #F8F7F6;
+  gap: 16px;
+  align-items: center;
+}
+
+.welcome {
+  text-align: center;
+}
+
+.welcomeImage {
+  width: 100%;
+  max-width: 420px;
+}
+
+.links {
+  a {
+    text-decoration: none;
+    color: "[theme:link, default:#03787c]";
+    color: var(--link); // note: CSS Custom Properties support is limited to modern browsers only
+
+    &:hover {
+      text-decoration: underline;
+      color: "[theme:linkHovered, default: #014446]";
+      color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
+    }
+  }
+}

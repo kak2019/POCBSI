@@ -1,0 +1,13 @@
+#workbenchCommandBar {
+    display: none !important;
+  }
+  
+  #SuiteNavWrapper {
+    display: none !important;
+  }
+  #spCommandBar {
+    display: none !important;
+  }
+  #spSiteHeader {
+    display: none !important;
+  }

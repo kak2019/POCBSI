@@ -9,10 +9,19 @@
           "manifest": "./src/webparts/bsipoc/BsipocWebPart.manifest.json"
         }
       ]
+    },
+    "upload-page-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/uploadPage/UploadPageWebPart.js",
+          "manifest": "./src/webparts/uploadPage/UploadPageWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
-    "BsipocWebPartStrings": "lib/webparts/bsipoc/loc/{locale}.js"
+    "BsipocWebPartStrings": "lib/webparts/bsipoc/loc/{locale}.js",
+    "UploadPageWebPartStrings": "lib/webparts/uploadPage/loc/{locale}.js"
   }
 }

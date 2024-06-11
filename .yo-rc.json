@@ -1,7 +1,7 @@
 {
   "@microsoft/generator-sharepoint": {
     "plusBeta": false,
-    "isCreatingSolution": true,
+    "isCreatingSolution": false,
     "version": "1.15.2",
     "libraryName": "bsi",
     "libraryId": "9ef5f6bc-c7a6-41eb-b5e8-944e8cc70d60",
