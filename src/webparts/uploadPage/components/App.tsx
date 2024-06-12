@@ -12,7 +12,7 @@ import { addRequest, fetchUserGroups } from "./utils/request";
 import 'antd/dist/antd.css';
 import { Stack } from '@fluentui/react/lib/Stack';
 // import { Label } from '@fluentui/react/lib/Label';
-import { Icon, Label } from "office-ui-fabric-react";
+import { Dropdown, Icon, IDropdownOption, IDropdownStyles, Label } from "office-ui-fabric-react";
 // import { Icon as IconBase } from '@fluentui/react/lib/Icon';
 import { Upload, Modal } from 'antd';
 // import { AadHttpClient, HttpClientResponse } from '@microsoft/sp-http';
@@ -78,44 +78,6 @@ interface JsonData {
     internationalVersion: InternationalVersion;
     // ... 其他属性
 }
-function extractAddresses(jsonObject: JsonData): Address[] {
-    // 提取地址信息
-    const addresses = jsonObject.internationalVersion.address;
-    return addresses;
-}
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const getArrayKey = (arr: Array<{ [key in string]: any }>, key: string) => {
-    for (let i = 0; i < arr.length; i++) {
-        if (arr[i]['UD-KMP'] === key) {
-            return arr[i]
-        }
-    }
-}
-
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const getSubTableData = (arr: Array<{ [key in string]: any }>) => {
-    let i = 30
-    const res = []
-    while (arr[i]['UD-KMP'] !== "CONSEQUENSES FOR OTHER SUPPLIERS?:") {
-        // res.push(arr[i])
-        res.push({ "Packaging account no": arr[i]['UD-KMP']??"", "company name": arr[i]?.__EMPTY??"", "City": arr[i]?.__EMPTY_1??"", 'Country Code': arr[i]?.__EMPTY_2 ? String(arr[i]?.__EMPTY_2) : "" })
-        i++
-    }
-    return res
-}
-
-// 获取61-72
-const getPackageData = (arr: Array<{ [key in string]: any }>) => {
-    // @ts-ignore 
-    const start = arr.findIndex(val => val.__rowNum__ === 59)
-    // @ts-ignore eslint-disable-next-line
-    const end = arr.findIndex(val => val.__rowNum__ === 72)
-
-    return arr.slice(start + 1, end).map(val => {
-        return { "Packaging": val['__EMPTY_1']??'', "Packaging Name": val.__EMPTY_2??'', "Yearly need": val.__EMPTY_3??'' }
-    }).filter(val => val.Packaging !== 0 && val.Packaging !== undefined && val.Packaging !== '')
-}
 
 function sanitize(input: string) {
     // based on https://support.microsoft.com/en-us/help/905231/information-about-the-characters-that-you-cannot-use-in-site-names--fo
@@ -130,36 +92,11 @@ function sanitize(input: string) {
     return sanitizedInput;
 }
 
-// 获取79-101
-const getData2 = (arr: Array<{ [key in string]: any }>) => {
-    // @ts-ignore 
-    const start = arr.findIndex(val => val.__rowNum__ === 79)
-    // @ts-ignore eslint-disable-next-line
-    const end = arr.findIndex(val => val.__rowNum__ === 101)
-
-    const table1 = arr.slice(start + 1, end).map(val => {
-        return {
-            "Packaging": val.__EMPTY_2??'',
-            "weekly need": val.__EMPTY??'',
-            "Packaging Name": val.__EMPTY_3??'',
-            "Yearly need": val.__EMPTY_4??'',
-        }
-    }).filter(val => val.Packaging !== 0 && val.Packaging !== undefined && val.Packaging !== '')
-
-    // const table2 = arr.slice(start + 1, end).map(val => {
-    //     return { 
-    //         "Packaging": val['__EMPTY_3'],
-    //         "Packaging Name": val['__EMPTY_4'],
-    //         "Yearly need":val['__EMPTY_5'],
-    //     }
-    // })
-    // return [table1, table2]
-    return table1
-
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-
+const dropdownStyles: Partial<IDropdownStyles> = {
+    root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 150, marginRight: 60, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
+    dropdown: { ':focus::after': { border: 'none' }, width: 230 },
+    title: { border: 'none', background: 'none' }
+  };
 
 export default memo(function App() {
     const sp = spfi(getSP());
@@ -171,21 +108,54 @@ export default memo(function App() {
     const [isShowModal, setIsShowModal] = useState(false)
     // const [apiResponse, setApiResponse] = useState<any>(null);
     const [submiting, setSubmiting] = React.useState<boolean>(false)
-    const [spParmaList, setspParmaList] = React.useState([])
+
     const [fileWarning, setfileWarning] = React.useState("")
     const [buttonvisible, setbuttonVisible] = React.useState<boolean>(true)
     const ctx = useContext(AppContext);
     const userEmail = ctx.context?._pageContext?._user?.email;
     const webURL = ctx.context?._pageContext?._web?.absoluteUrl;
-    const [isLoading, setisloading] = React.useState<boolean>(false)
-    const [isPLTeam, setisPLTeam] = React.useState<boolean>(false)
-  
 
-   
+    const [selectedKeyPeriod, setSelectedKeyPeriod] = React.useState<string>("");
+    const [periodNameOption, setPeriodNameOption] = React.useState<IDropdownOption[]>()
+    const [selectedKey, setSelectedKey] = React.useState<string>('');
+    const [periodDetails, setperiodDetails] = React.useState([])
+
+    const Site_Relative_Links = webURL.slice(webURL.indexOf('/sites'))
+
+    const [fileExistFlag,setfileExistFlag] = React.useState<Boolean>(false)
+    const handleDropdownChange_Period = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
+        if (item) {
+          setSelectedKeyPeriod(item.key as string);
+          setSelectedKey(item.text as string);
+        //   const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
+    
+        }
+    
+      };
 
 
+    // 校验方法
+    const validateHeaders = (headers: string[]): boolean => {
+        const requiredHeaders = ['Dealer ID', 'Application', 'Machine No', 'Description', 'Amount in USD'];
+        return requiredHeaders.every(header => headers.indexOf(header) !== -1);;
+    };
 
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    async function doesFolderExist(folderName: string): Promise<boolean> {
+        try {
+          // 尝试获取目标文件夹的属性
+          const folder = await sp.web.getFileByServerRelativePath(`${Site_Relative_Links}/VCAD Documents/${folderName}`).select("Exists")();
+          console.log("filename",folderName,folder,folder.Exists)
+          return folder.Exists;
+        } catch (error) {
+          // 如果抛出404错误，表示文件夹不存在
+          if (error.status === 404) {
+            return false;
+          } else {
+            throw error; // 处理其他可能的错误
+          }
+        }
+      }
+
     const handleFileUpload = (info: any) => {
         // 重置状态
         setItems([]);
@@ -193,8 +163,9 @@ export default memo(function App() {
         setError(null);
         setFile(null); // 确保每次上传前文件状态都被重置
         setShowBtn(false); // 根据需要可能还需要重置其他UI状态
+
         if (info.file) {
-            const file = info.file
+            const file = info.file;
             if (!file) return;
 
             const reader = new FileReader();
@@ -203,86 +174,124 @@ export default memo(function App() {
                 if (typeof binaryStr === 'string') {
                     const workbook = XLSX.read(binaryStr, { type: 'binary' });
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                   
+                    const jsonData: unknown[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    // 调用校验方法
+                    const headers = jsonData[0] as string[];
+                    const isValid = validateHeaders(headers);
+                    if (!isValid) {
+                        setError('文件的第一行必须包含 Dealer ID, Application, Machine No, Description, Amount in USD');
+                        return;
+                    }
+                    setFile(file)
+                    setShowBtn(true)
+                    // 将数据转换为 JSON 格式并设置到状态中
+                    const data = XLSX.utils.sheet_to_json(worksheet);
+                    console.log(data)
+                    setData(data);
+                }
+            };
+            reader.onerror = (error) => {
+                setError('文件读取失败'); // 处理文件读取错误
             };
             reader.readAsBinaryString(file);
         }
     };
-   
 
+
+    // 提交方法
     const submitFunction = async (): Promise<void> => {
-        if (submiting) return
-        setSubmiting(true)
-        let index = 0
-        for (let i = 0; i < items.length; i++) {
-            if (items[i]['UD-KMP'] === 'CONSEQUENSES FOR OTHER SUPPLIERS?:') {
-                index = i
-                break
+        if (submiting) return;
+       
+        setSubmiting(true);
+
+        try {
+            // 上传文件
+            if (uploadFile) {
+                await sp.web.getFolderByServerRelativePath('VCAD Documents').files.addUsingPath(selectedKey+uploadFile.name.substring(uploadFile.name.lastIndexOf('.')), uploadFile, { Overwrite: true });
             }
-        }
-      
 
+            // 操作成功，更新UI状态
+            setbuttonVisible(false);
+        } catch (error) {
+            setError('文件上传失败');
+        } finally {
+            setSubmiting(false);
         }
-        const sp = spfi(getSP());
-        // let promiss
-        const request = {}
-        addRequest({ request }).then(async promises => {
-            console.log("promiss", promises, typeof (promises));
-            const responseData = (promises as Record<string, any>).data;
-            const id = responseData.ID;
-            console.log('ID:', id);
-            // console.log(promises.indexOf('ID'))
-            const folderName = id;
-            await sp.web.folders.addUsingPath(`Nii Case Library/${folderName}`)
-            const res = await sp.web.getFolderByServerRelativePath(`Nii Case Library/${folderName}`).files.addUsingPath(sanitize(uploadFile.name), uploadFile)
-            const item = await res.file.getItem()
-            // const contentTypes = await sp.web.lists.getByTitle('Nii Case Library').contentTypes.getContextInfo()
-            // console.log(contentTypes)
-            // .get()
-            // .then(result => {
-            //   const FinalFileContentTypeId = result.filter((contenType) => {
-            //     return contenType.Name === CONST.FinalFileCT;
-            //   })[0].StringId;
-            // @ts-ignore
-            sp.web.lists.getByTitle('Nii Case Library').contentTypes()
-                .then(async (result: any[]) => {
-                    const UploadFileContentTypeId = result.filter((contenType) => {
-                        return contenType.Name === 'uploadFile';
-                    })[0].StringId;
-                    //@ts-ignore
-                    const finalRes = await sp.web.lists.getByTitle('Nii Case Library').items.getById(item.ID).update({
-                        ContentTypeId: UploadFileContentTypeId
-                    })
-                }).then(() =>
-                    // window.location.href = webURL + "/sitepages/CollabHome.aspx"
-                    setbuttonVisible(false)
-                );
-            //sp.web.lists.getByTitle("Nii Case Library").rootFolder.folders.add(folderName.toString());
-        }).catch(err => console.log("err", err));
-    }
+    };
 
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  const initData = async () => {
+    const period = await sp.web.lists.getByTitle("Cost Calculation Period").renderListDataAsStream({
+
+      ViewXml: `<View>
+                      <ViewFields>
+                        <FieldRef Name="PeriodName"/>
+                        <FieldRef Name="PeriodDetails"/>
+                        <FieldRef Name="NumberofMonths"/>
+                        <FieldRef Name="AvailableforSelection"/>
+                        <FieldRef Name="Generated"/>
+                      </ViewFields>
+                   
+                    </View>`,
+      // <RowLimit>400</RowLimit>
+    }).then((response) => {
+      console.log("period", response.Row)
+      if (response.Row?.length > 0) {
+
+        setPeriodNameOption(
+          response.Row.filter(item => item.AvailableforSelection === "是" || item.AvailableforSelection === "Yes").map(period => ({
+            key: period.PeriodDetails,
+            text: period.PeriodName
+          })))
+        const details = response.Row.filter(item => item.AvailableforSelection === "是" || item.AvailableforSelection === "Yes").map(period => ({
+          key: period.PeriodDetails,
+          text: period.PeriodName,
+          nummonth: period.NumberofMonths
+        }))
+        const perioddetails_init = details
+        console.log("erioddetails", perioddetails_init)
+        setperiodDetails(details)
+
+
+      }
+      // console.log("respackage", response.Row.filter((item)=>item.field_2))
+      // if (response.Row.length > 0) {
+      //   const resObj: any = {}
+      //   response.Row.forEach(val => {
+      //     resObj[`${val.Title};${val.field_2}`] = val.field_3 * 1
+      //   })
+      //   return resObj
+      // }
+
+      return {}
+    })
+  }
+  useEffect(() => {
+    initData().then(res => res).catch(err => err)
+  }, [])
 
     return (
-       <div className={styles.uploadPage}>
-            {/* {error} */}
-            {/* <div className={styles.header}>
-                <Stack horizontal>
-                    <Label style={{ width: "70%", fontSize: 20 }}>Create New Case</Label> 
-                    <Icon style={{ fontSize: "25px" }} iconName="HomeSolid" />
-                    <Link rel="www.baidu.com" style={{ textAlign: "right" }}>GO to Home Page</Link>
-                </Stack>
-            </div> */}
+        <div className={styles.uploadPage}>
             {
                 buttonvisible ? <div className={styles.content}>
                     <Stack horizontal>
                         <Icon style={{ fontSize: "14px", color: '#00829B' }} iconName="Back" />
                         <span style={{ marginLeft: '8px', color: '#00829B' }} ><a href={webURL + "/sitepages/CollabHome.aspx"} style={{ color: '#00829B', fontSize: "12px" }}>Return to home</a></span>
                     </Stack>
-                    <div className={styles.title}>Create New Case</div>
+                    <div className={styles.title}>Upload VCAD File</div>
                     <Stack horizontal horizontalAlign="space-between" style={{ marginBottom: '8px' }}>
-                        <div className={styles.subTitle}>Upload an excel document</div>
+                        {/* <div className={styles.subTitle}>Upload an excel document</div> */}
                         {/* <div className={styles.subTitle}>*Invalid file case</div> */}
+                    </Stack>
+                    <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 10 }}>
+                        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>Select Period</Label>
+                        <Dropdown
+                            options={periodNameOption}
+                            styles={dropdownStyles}
+                            onChange={handleDropdownChange_Period}
+                        />
+                        {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
                     </Stack>
                     {
                         uploadFile
@@ -307,18 +316,15 @@ export default memo(function App() {
                                         padding: '13px',
                                         cursor: 'pointer'
                                     }}><Del /></div>
-                                    
+
                                 </Stack>
-                                <div style={{paddingLeft:10}}> 
-                                    <Label>Parma : {String(items[3]?.__EMPTY_1)}</Label>
-                                    <Label>Company : {items[4]?.__EMPTY_1&&String(items[4]?.__EMPTY_1)}</Label>
-                                    </div>
+
                             </Stack>
                             : <Stack className={styles.uploadBox} verticalAlign="center">
                                 {
                                     error
                                         ? <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{error}</div></div>
-                                        : <div className={styles.subTitle}>*Please contain supplier company name</div>
+                                        : <div className={styles.subTitle}>*Please contain VCAD Data</div>
                                 }
                                 <Upload
                                     beforeUpload={() => false}
@@ -337,7 +343,7 @@ export default memo(function App() {
                                         border: '1px solid #D6D3D0',
                                         background: '#FFF'
                                     }} icon={<FileSvg />}
-                                    disabled={isPLTeam}
+
                                     >Select files</Button>
                                 </Upload>
                                 {
@@ -354,7 +360,20 @@ export default memo(function App() {
                             <Button style={{
                                 width: 140, marginTop: '32px', borderRadius: '6px', color: '#fff',
                                 background: '#00829B'
-                            }} onClick={() => setIsShowModal(true)}>Upload</Button></>
+                            }} onClick={async () => {
+                                try {
+                                    doesFolderExist(selectedKey + uploadFile.name.substring(uploadFile.name.lastIndexOf('.'))).then(exsit=>{
+                                        console.log(exsit)
+                                        setfileExistFlag(exsit)});
+                                
+                                    setIsShowModal(true);
+                                } catch (error) {
+                                    console.error('Error checking if folder exists:', error);
+                                    setfileExistFlag(false);
+                                    setIsShowModal(true);
+                                }
+                            }}>
+                                    Upload</Button></>
                             :
                             <Button style={{
                                 width: 140, marginTop: '32px', borderRadius: '6px', color: '#fff',
@@ -378,11 +397,10 @@ export default memo(function App() {
                 </div>}
             <Modal open={isShowModal} closable={false} footer={null} width={500} style={{ borderRadius: '6px', overflow: 'hidden', paddingBottom: 0 }}>
                 <Stack verticalAlign="center" style={{ alignItems: 'center', paddingTop: '64px', paddingBottom: '54px' }}>
-                    <p>Are you sure you want to upload this file?</p>
-                    <div style={{paddingLeft:98 ,display: 'flex', alignItems: 'flex-start', flexDirection: 'column'}}> 
-                                    <Label>Parma : {String(items[3]?.__EMPTY_1)}</Label>
-                                    <Label >Company : {items[4]?.__EMPTY_1&&String(items[4]?.__EMPTY_1)}</Label>
-                                    </div>
+                    {fileExistFlag?<p>File already exists. Do you want to overwrite it?</p>:<p>Are you sure you want to upload this file?</p>}
+                    <div style={{ paddingLeft: 98, display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
                         <Button onClick={() => setIsShowModal(false)} style={{ width: 120, height: 42, marginTop: '32px', borderRadius: '6px' }}>Cancel</Button>
                         <Button style={{
@@ -390,7 +408,7 @@ export default memo(function App() {
                             background: '#00829B'
                         }} onClick={() => {
                             setIsShowModal(false)
-                           
+                            submitFunction()
                         }}>Yes</Button>
                     </div>
                 </Stack>
