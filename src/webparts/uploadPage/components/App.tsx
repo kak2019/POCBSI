@@ -290,6 +290,7 @@ export default memo(function App() {
                             options={periodNameOption}
                             styles={dropdownStyles}
                             onChange={handleDropdownChange_Period}
+                            // required
                         />
                         {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
                     </Stack>
@@ -354,7 +355,7 @@ export default memo(function App() {
                     }
 
                     {
-                        showBtn && !error ? <> {
+                        selectedKey!==""&&showBtn && !error ? <> {
                             fileWarning && <div style={{ display: 'flex', alignItems: 'center', color: 'green' }}><Error /> <div className={styles.subTitle} style={{ color: 'rgb(219 155 22)', marginLeft: '8px' }}>{fileWarning}</div></div>
                         }
                             <Button style={{
@@ -372,7 +373,9 @@ export default memo(function App() {
                                     setfileExistFlag(false);
                                     setIsShowModal(true);
                                 }
-                            }}>
+                            }} 
+                            // disabled={selectedKey===""}
+                            >
                                     Upload</Button></>
                             :
                             <Button style={{
@@ -388,7 +391,7 @@ export default memo(function App() {
                         </div>
                         Submitted!
                     </p>
-                    <p style={{ fontSize: '14px', textAlign: 'center' }}>Submitted successfully! The request will be listed in some minutes.</p>
+                    <p style={{ fontSize: '14px', textAlign: 'center' }}>Submitted successfully! </p>
                     <Stack style={{ alignItems: 'center' }}>
                         <Button style={{
                             width: 80, height: 42, marginTop: '2px', borderRadius: '6px', color: '#fff',
