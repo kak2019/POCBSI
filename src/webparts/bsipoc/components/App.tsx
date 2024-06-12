@@ -8,7 +8,7 @@ import "@pnp/sp/folders";
 import { DefaultButton, Label, mergeStyleSets, PrimaryButton, Stack } from "office-ui-fabric-react";
 import * as XLSX from 'xlsx';
 import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
-import { ProgressIndicator } from '@fluentui/react/lib/ProgressIndicator';
+
 // import YearPicker from "./control/YearSelect";
 import createrFolder from "./control/CreateFolder"
 import * as Excel from 'exceljs';
@@ -16,10 +16,9 @@ import AppContext from "../../../common/AppContext";
 // import XlxsExcelFromSP from "./xlxsexcel"
 
 import { Modal, Toggle } from '@fluentui/react';
-import { mergeStyles } from '@fluentui/react/lib/Styling';
-
+import styles from "./Bsipoc.module.scss";
 import { useBoolean } from "@fluentui/react-hooks";
-import { addRequest, fetchUserGroups } from '../assets/request'
+import { addRequest, } from '../assets/request'
 import "./App.css";
 // const options: IDropdownOption[] = [
 
@@ -840,8 +839,8 @@ export default memo(function App() {
   const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
-    <>
-      <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
+    <div className={styles.uploadPage}>
+      <h1 style={{ margin: 10 } }>Business System Cost Calculation</h1>
 
 
 
@@ -1020,7 +1019,7 @@ export default memo(function App() {
       </Stack>
       {/* {periodDetails} */}
 
-    </>
+    </div>
   )
 
 

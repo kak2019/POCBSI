@@ -32,3 +32,15 @@
     }
   }
 }
+
+.uploadPage {
+  overflow: hidden;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  background: #E5E5E5;
+  width: 100%;
+  height: 85vh;
+  &.teams {
+    font-family: $ms-font-family-fallbacks;
+  }
+}
