@@ -19,7 +19,7 @@ import { Modal, Toggle } from '@fluentui/react';
 import styles from "./Bsipoc.module.scss";
 import { useBoolean } from "@fluentui/react-hooks";
 import { addRequest, } from '../assets/request'
-import "./App.css";
+// import "./App.css";
 // const options: IDropdownOption[] = [
 
 //   { key: 'Q1', text: 'Q1' },

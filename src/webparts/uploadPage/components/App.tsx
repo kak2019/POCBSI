@@ -22,6 +22,7 @@ import { spfi } from "@pnp/sp";
 import { getSP } from "../../../common/pnpjsConfig";
 import "@pnp/sp/webs";
 import "@pnp/sp/folders";
+import "@pnp/sp/batching";
 import styles from './UploadPage.module.scss'
 import FileSvg from '../assets/file'
 import Del from '../assets/delete'
@@ -132,7 +133,58 @@ export default memo(function App() {
         }
     
       };
-
+      // 测试读取特定的excel 文件
+      async function readExcelFromLibrary( fileName :string) {
+        try {
+          const file = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/VCAD Documents/2024Q1.xlsx").getBuffer();
+      
+          const workbook = XLSX.read(file, { type: "buffer" });
+      
+          // 假设我们读取第一个工作表
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+      
+          // 将工作表转换为 JSON 数据
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+          console.log(jsonData);
+          return jsonData;
+        } catch (error) {
+          console.error("Error reading Excel file from library", error);
+        }
+      }
+      
+    // 多个项目提交
+      async function addMultipleItems() {
+        try {
+          const [batchedSP, execute] = sp.batched();
+          const list = batchedSP.web.lists.getByTitle("testList");
+      
+          let res: any[] = [];
+      
+          for (let i = 0; i < 60; i++) {
+            list.items.add({
+              Title: `Item ${i + 1}`,
+              // Add other fields as needed
+             
+            }).then(r => res.push(r));
+          }
+      
+          // Executes the batched calls
+          await execute();
+      
+          // Results for all batched calls are available
+          for (let i = 0; i < res.length; i++) {
+            console.log(res[i]); // or do something with the results
+          }
+      
+          console.log("60 items added successfully");
+        } catch (error) {
+          console.error("Batch execution failed", error);
+        }
+      }
+      
+     
 
     // 校验方法
     const validateHeaders = (headers: string[]): boolean => {
@@ -273,6 +325,8 @@ export default memo(function App() {
 
     return (
         <div className={styles.uploadPage}>
+            <Button onClick={()=> addMultipleItems().catch(console.error)}> 提交测试</Button>
+            <Button onClick={()=> readExcelFromLibrary("222")}> 提交测试</Button>
             {
                 buttonvisible ? <div className={styles.content}>
                     <Stack horizontal>
