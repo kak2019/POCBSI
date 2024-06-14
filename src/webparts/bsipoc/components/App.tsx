@@ -186,6 +186,49 @@ export default memo(function App() {
       return obj
     })
   }
+  // 测试读取特定的excel 文件
+  async function readExcelFromLibrary( fileName :string) {
+    try {
+      const file = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/VCAD Documents/2024Q1.xlsx").getBuffer();
+  
+      const workbook = XLSX.read(file, { type: "buffer" });
+  
+      // 假设我们读取第一个工作表
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+  
+      // 将工作表转换为 JSON 数据
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+  
+      console.log(jsonData);
+      return jsonData;
+    } catch (error) {
+      console.error("Error reading Excel file from library", error);
+    }
+  }
+function calcToVcads(detail:any){
+  console.log("Main",detail)
+ // 按 Market 分组，并提取 PartnerID 列表
+const groupedByMarket = detail.reduce((acc:any, item:any) => {
+  if (!acc[item.Market]) {
+    acc[item.Market] = [];
+  }
+  // 确保 PartnerID 不重复
+  if (!acc[item.Market].includes(item.PartnerID)) {
+    acc[item.Market].push(item.PartnerID);
+  }
+  return acc;
+}, {});
+
+console.log(groupedByMarket);
+readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("excel",data))
+
+
+
+}
+
+
+
 
   function calcToSummary(details: any, priceMap: any, map: any, period: any) {
     // 添加了从period 获得的月份 在计算数量和总价格的时候用到了
@@ -225,11 +268,6 @@ export default memo(function App() {
         p[key].count += Number(val[key] || 0)
       }
     })
-    // console.log(details,"details")
-    // console.log("selectedKeyPeriod", periodDetails, ["3434"])
-    //const numMonth = periodDetails.filter(item => item.periodDetails === selectedKey)
-    //console.log("nm,omth", numMonth)
-    // console.log(p,"P")
     for (let key in p) {
       const isLDSorLSS = key === 'LDS' || key === 'LSS';
       const isLDSandLSS = key === "LDS+LSS"
@@ -282,7 +320,7 @@ export default memo(function App() {
 
       worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
         row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
-          if ( colNumber >= 6 && colNumber <= 16  ) {
+          if (colNumber >= 6 && colNumber <= 16) {
             if (cell.value !== null && cell.value.toString().trim() !== "") {
               // 尝试将单元格内容转换为数字
               let numericValue = parseFloat(cell.value);
@@ -291,13 +329,13 @@ export default memo(function App() {
                 cell.numFmt = '0'; // 设置为没有小数的格式
                 cell.value = numericValue; // 更新单元格值为转换后的数字
               }
-            }else {
+            } else {
               // 单元格内容为空或仅包含空白字符，不做改动，保留原样
               cell.value = cell.value;
             }
-          }else if(colNumber===5){
+          } else if (colNumber === 5) {
             cell.value = cell.value;
-          }else{
+          } else {
             let numericValue = parseFloat(cell.value);
             if (!isNaN(numericValue)) {
               // 是数字，则设置为数字类型并应用格式
@@ -394,7 +432,7 @@ export default memo(function App() {
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
       workSheetSummaryTpt.getCell('E2').value = selectedKeyPeriod
       // console.log("selectedKeyPeriod",selectedKeyPeriod)
-      
+
       for (let i = 5; i < tongji.data.length + 5; i++) {
         const value = tongji.data[i - 5];
         workSheetSummaryTpt.getCell('A' + i).value = value.A;
@@ -436,17 +474,14 @@ export default memo(function App() {
       workSheetDetails.getCell('A' + (countryOrders.length + 4)).value = 'Total';
       workSheetDetails.getCell('Q' + (countryOrders.length + 4)).value = total.toFixed(2);
 
-      // workSheetDetails['!ref'] = 'A1:R100'
+      // 拿到一个名为“VCADS”的新工作表
+      const workSheetVCADS = workbookTemplate.getWorksheet(3);
 
-      // 创建工作簿
-      // const workbook = XLSX.utils.book_new();
-      // XLSX.utils.book_append_sheet(workbook, workSheetSummaryTpt, "Market Summary");
-      // // XLSX.utils.book_append_sheet(workbook, worksheet, "Package Details");
-      // XLSX.utils.book_append_sheet(workbook, workSheetDetails, "Package Details");
+      // 在VCADS工作表中添加数据
+      workSheetVCADS.getCell('A4').value = 'This is the VCADS sheet';
+      workSheetVCADS.getCell('B4').value = 'You can add your data here';
 
-      // // 将工作簿转换为Blob
-      // const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      // const blob = new Blob([wbout], { type: "application/octet-stream" });
+
       const wbout = await workbookTemplate.xlsx.writeBuffer()
 
       changeStyle(wbout).then(blob => {
@@ -737,6 +772,7 @@ export default memo(function App() {
 
     console.log(calcToSummary(finalExcelData, price, obj, period))
     console.log("excel121", finalExcelData)
+    calcToVcads(order)
     setExcel(finalExcelData)
   }
   async function doesFolderExist(libraryName: string, folderName: string): Promise<boolean> {
@@ -840,7 +876,7 @@ export default memo(function App() {
 
   return (
     <div className={styles.uploadPage}>
-      <h1 style={{ margin: 10 } }>Business System Cost Calculation</h1>
+      <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
 
 
 
@@ -973,7 +1009,7 @@ export default memo(function App() {
                   ))}
             </ul>
             <p className={classNames.paragraph}>
-          Please be aware that there might be a few minutes delay to send the email.</p>
+              Please be aware that there might be a few minutes delay to send the email.</p>
           </div>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
@@ -992,7 +1028,7 @@ export default memo(function App() {
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          Please be aware that there might be a few minutes delay to send the email.</p>
+            Please be aware that there might be a few minutes delay to send the email.</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirm}>OK</DefaultButton>
