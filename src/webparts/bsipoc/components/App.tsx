@@ -108,6 +108,12 @@ export default memo(function App() {
   const [periodNameOption, setPeriodNameOption] = React.useState<IDropdownOption[]>()
   const [NumberofMonths, setNumberOfMonth] = React.useState(1)
   const [periodDetails, setperiodDetails] = React.useState([])
+  const [vcads, setVcads] = React.useState({
+    group: {},
+    data: []
+  })
+  // vcads数量表
+  const [vcadsCt, setVcadsCount] = React.useState([])
   //HUb info
   const [hubinfosp, sethubinfosp] = React.useState([])
   const handleDropdownChange_Period = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
@@ -220,8 +226,14 @@ const groupedByMarket = detail.reduce((acc:any, item:any) => {
   return acc;
 }, {});
 
-console.log(groupedByMarket);
-readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("excel",data))
+console.log('group', groupedByMarket);
+readExcelFromLibrary("应该写文件名 先写死").then(data => {
+  console.log("excel",data)
+  setVcads({
+    group: groupedByMarket,
+    data,
+  })
+})
 
 
 
@@ -230,7 +242,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
 
 
 
-  function calcToSummary(details: any, priceMap: any, map: any, period: any) {
+  function calcToSummary(details: any, priceMap: any, map: any, period: any, marketName: any) {
     // 添加了从period 获得的月份 在计算数量和总价格的时候用到了
     let numMonth = 1
     if (selectedKey !== "") {
@@ -268,6 +280,19 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
         p[key].count += Number(val[key] || 0)
       }
     })
+
+    // 计算vcads数量
+    let countTable = vcadsCt.filter(val => val.Period === selectedKey && val.Market === marketName)
+    countTable.map((val: any) => ({ ...val })).forEach(val => {
+      val['S410 W VOCOM'] = val['S410WVOCOM']
+      val['S410 W/O VOCOM'] = val['S410W_x002f_OVOCOM']
+      val['V110 W VOCOM'] = val['V110WVOCOM']
+      val['V110 W/O VOCOM'] = val['V110W_x002f_OVOCOM']
+      for (let key in p) {
+        p[key].count += Number(val[key] || 0)
+      }
+    })
+
     for (let key in p) {
       const isLDSorLSS = key === 'LDS' || key === 'LSS';
       const isLDSandLSS = key === "LDS+LSS"
@@ -333,7 +358,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
               // 单元格内容为空或仅包含空白字符，不做改动，保留原样
               cell.value = cell.value;
             }
-          } else if (colNumber === 5) {
+          } else if (colNumber === 5 || colNumber === 1) {
             cell.value = cell.value;
           } else {
             let numericValue = parseFloat(cell.value);
@@ -426,7 +451,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
       const workSheetSummaryTpt = workbookTemplate.getWorksheet(1); // 获取第一个工作表
       // const arrTpt = XLSX.utils.sheet_to_json(workSheetSummaryTpt)
 
-      const tongji = calcToSummary(countryOrders, priceTable, nameObj, periodDetails)
+      const tongji = calcToSummary(countryOrders, priceTable, nameObj, periodDetails, Market)
       // \console.log("tongji",tongji)
       workSheetSummaryTpt.getCell('B2').value = tongji.Country
       // workSheetSummaryTpt['E2'] = { v: `${selectedYear}/${(Number(selectedKey.replace('Q', '')) -1 )*3+1} - ${selectedYear}/${(Number(selectedKey.replace('Q', '')))*3}` }
@@ -476,10 +501,17 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
 
       // 拿到一个名为“VCADS”的新工作表
       const workSheetVCADS = workbookTemplate.getWorksheet(3);
-
+      const countryVcads = vcads.data.filter(item => (vcads.group as any)[Market].includes(item['Dealer ID'].toString()))
+      console.log('vcads', countryVcads)
       // 在VCADS工作表中添加数据
-      workSheetVCADS.getCell('A4').value = 'This is the VCADS sheet';
-      workSheetVCADS.getCell('B4').value = 'You can add your data here';
+      for (let i = 3; i < countryVcads.length + 3; i++) {
+        const d = countryVcads[i - 3]
+        workSheetVCADS.getCell('A' + i).value = d['Dealer ID']
+        workSheetVCADS.getCell('B' + i).value = d['Application']
+        workSheetVCADS.getCell('C' + i).value = d['Machine No']
+        workSheetVCADS.getCell('D' + i).value = d['Description']
+        workSheetVCADS.getCell('E' + i).value = d['Amount in USD']
+      }
 
 
       const wbout = await workbookTemplate.xlsx.writeBuffer()
@@ -557,6 +589,28 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
       }
 
       return {}
+    })
+
+    // 拿vcads数量表
+    const vcadsCount = await sp.web.lists.getByTitle("VCAD Summary").renderListDataAsStream({
+      ViewXml: `<View>
+                      <ViewFields>
+                        <FieldRef Name="Market"/>
+                        <FieldRef Name="S410WVOCOM"/>
+                        <FieldRef Name="S410W_x002f_OVOCOM"/>
+                        <FieldRef Name="V110WVOCOM"/>
+                        <FieldRef Name="V110W_x002f_OVOCOM"/>
+                        <FieldRef Name="HWI"/>
+                        <FieldRef Name="Period"/>
+                        <FieldRef Name="Partner_x0020_ID"/>
+                      </ViewFields>
+                   
+                    </View>`,
+      // <RowLimit>400</RowLimit>
+    }).then((response) => {
+      console.log("vcads数量表", response.Row)
+      // console.log("resAPP", response.Row.filter((item)=>item.field_2))
+      return response.Row
     })
 
 
@@ -767,10 +821,10 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => console.log("e
     }
     setPrice(price)
     setNameObj(obj)
+    setVcadsCount(vcadsCount)
     console.log('price', price)
     const finalExcelData = calcToExcel(order, price, obj)
 
-    console.log(calcToSummary(finalExcelData, price, obj, period))
     console.log("excel121", finalExcelData)
     calcToVcads(order)
     setExcel(finalExcelData)
