@@ -325,8 +325,8 @@ export default memo(function App() {
 
     return (
         <div className={styles.uploadPage}>
-            <Button onClick={()=> addMultipleItems().catch(console.error)}> 提交测试</Button>
-            <Button onClick={()=> readExcelFromLibrary("222")}> 提交测试</Button>
+            {/* <Button onClick={()=> addMultipleItems().catch(console.error)}> 提交测试</Button>
+            <Button onClick={()=> readExcelFromLibrary("222")}> 提交测试</Button> */}
             {
                 buttonvisible ? <div className={styles.content}>
                     <Stack horizontal>

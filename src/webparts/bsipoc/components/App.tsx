@@ -42,8 +42,10 @@ export default memo(function App() {
   const [isModalOpenhub, { setTrue: showModalhub, setFalse: hideModalhub }] = useBoolean(false);
   const [isModalOpenConfirm, { setTrue: showModalConfirm, setFalse: hideModalconfirm }] = useBoolean(false);
   const [isModalOpenConfirmGenerate, { setTrue: showModalConfirmGenerate, setFalse: hideModalconfirmGenerate }] = useBoolean(false);
-  const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
-  const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
+  const [isModalOpenError, { setTrue: showModalError, setFalse: hideModalError }] = useBoolean(false);
+  // const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
+  // const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
+  const [error, setError] = React.useState("");
   const classNames = mergeStyleSets({
     modal: {
       width: 500,
@@ -193,51 +195,56 @@ export default memo(function App() {
     })
   }
   // 测试读取特定的excel 文件
-  async function readExcelFromLibrary( fileName :string) {
+  async function readExcelFromLibrary(fileName: string) {
     try {
-      const file = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/VCAD Documents/2024Q1.xlsx").getBuffer();
-  
+      console.log("selek", selectedKey)
+      const file = await sp.web.getFileByServerRelativePath(Site_Relative_Links + `/VCAD Documents/${fileName}.xlsx`).getBuffer();
+
       const workbook = XLSX.read(file, { type: "buffer" });
-  
+
       // 假设我们读取第一个工作表
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-  
+
       // 将工作表转换为 JSON 数据
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-  
+
       console.log(jsonData);
       return jsonData;
-    } catch (error) {
-      console.error("Error reading Excel file from library", error);
+    } catch (err) {
+      console.error("Error reading Excel file from library", err);
+      setError(extractMessage(err.message))
+      showModalError()
+      hideModalconfirmGenerate()
     }
   }
-function calcToVcads(detail:any){
-  console.log("Main",detail)
- // 按 Market 分组，并提取 PartnerID 列表
-const groupedByMarket = detail.reduce((acc:any, item:any) => {
-  if (!acc[item.Market]) {
-    acc[item.Market] = [];
+  function calcToVcads(detail: any) {
+    console.log("Main", detail)
+    // 按 Market 分组，并提取 PartnerID 列表
+    const groupedByMarket = detail.reduce((acc: any, item: any) => {
+      if (!acc[item.Market]) {
+        acc[item.Market] = [];
+      }
+      // 确保 PartnerID 不重复
+      if (!acc[item.Market].includes(item.PartnerID)) {
+        acc[item.Market].push(item.PartnerID);
+      }
+      return acc;
+    }, {});
+
+    console.log('group', groupedByMarket);
+    if(selectedKey !== ""){
+    readExcelFromLibrary(selectedKey).then(data => {
+      console.log("excel", data)
+      setVcads({
+        group: groupedByMarket,
+        data,
+      })
+    })
   }
-  // 确保 PartnerID 不重复
-  if (!acc[item.Market].includes(item.PartnerID)) {
-    acc[item.Market].push(item.PartnerID);
+
+
   }
-  return acc;
-}, {});
-
-console.log('group', groupedByMarket);
-readExcelFromLibrary("应该写文件名 先写死").then(data => {
-  console.log("excel",data)
-  setVcads({
-    group: groupedByMarket,
-    data,
-  })
-})
-
-
-
-}
 
 
 
@@ -342,35 +349,35 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
     const worksheet = workbook.getWorksheet(1); // 获取第一个工作表
 
     workbook.eachSheet(async (worksheet, sheetId) => {
-
-      worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
-        row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
-          if (colNumber >= 6 && colNumber <= 16) {
-            if (cell.value !== null && cell.value.toString().trim() !== "") {
-              // 尝试将单元格内容转换为数字
+      if (sheetId !== 3) {
+        worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
+          row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
+            if (colNumber >= 6 && colNumber <= 16) {
+              if (cell.value !== null && cell.value.toString().trim() !== "") {
+                // 尝试将单元格内容转换为数字
+                let numericValue = parseFloat(cell.value);
+                if (!isNaN(numericValue)) {
+                  // 是数字，则设置为数字类型并应用格式
+                  cell.numFmt = '0'; // 设置为没有小数的格式
+                  cell.value = numericValue; // 更新单元格值为转换后的数字
+                }
+              } else {
+                // 单元格内容为空或仅包含空白字符，不做改动，保留原样
+                cell.value = cell.value;
+              }
+            } else if (colNumber === 5 || colNumber === 1) {
+              cell.value = cell.value;
+            } else {
               let numericValue = parseFloat(cell.value);
               if (!isNaN(numericValue)) {
                 // 是数字，则设置为数字类型并应用格式
-                cell.numFmt = '0'; // 设置为没有小数的格式
+                cell.numFmt = '0.00'; // 设置为两位小数的格式
                 cell.value = numericValue; // 更新单元格值为转换后的数字
               }
-            } else {
-              // 单元格内容为空或仅包含空白字符，不做改动，保留原样
-              cell.value = cell.value;
             }
-          } else if (colNumber === 5 || colNumber === 1) {
-            cell.value = cell.value;
-          } else {
-            let numericValue = parseFloat(cell.value);
-            if (!isNaN(numericValue)) {
-              // 是数字，则设置为数字类型并应用格式
-              cell.numFmt = '0.00'; // 设置为两位小数的格式
-              cell.value = numericValue; // 更新单元格值为转换后的数字
-            }
-          }
+          });
         });
-      });
-
+      }
       // 如果需要保存更改，取消下面注释
       //await worksheet.commit();
       //await workbook.xlsx.writeFile(filePath);
@@ -415,8 +422,11 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
 
       const file = await folder.files.addUsingPath(fileName, blob, { Overwrite: true });
       console.log(`File uploaded successfully! File URL: ${file.data.ServerRelativeUrl}`);
-    } catch (error) {
-      console.error('Error uploading file:', error);
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError(extractMessage(err.message))
+      showModalError()
+      hideModalconfirmGenerate()
     }
   }
 
@@ -545,7 +555,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
     Promise.all(uploadPromises).then(() => {
       setTimeout(() => {
         // alert("All cost summaries are generated and uploaded successfully.");
-        showModalConfirmGenerate()
+        if (error === "") { showModalConfirmGenerate() }
       }, 500);
       const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
@@ -829,6 +839,20 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
     calcToVcads(order)
     setExcel(finalExcelData)
   }
+
+  // 提取错误信息中的 message 字段
+  const extractMessage = (errorString: string) => {
+    try {
+      const match = errorString.match(/"value":"(.*?)"/);
+      if (match && match[1]) {
+        return match[1];
+      }
+      return errorString; // 如果没有匹配到，返回原始错误字符串
+    } catch (e) {
+      return errorString; // 捕获异常，返回原始错误字符串
+    }
+  };
+
   async function doesFolderExist(libraryName: string, folderName: string): Promise<boolean> {
     try {
       // 尝试获取目标文件夹的属性
@@ -845,8 +869,9 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
   }
   // 应用单价（每人）表
   useEffect(() => {
+    setError("")
     initData().then(res => res).catch(err => err)
-  }, [])
+  }, [selectedKey])
   //   useEffect(() => {
   //     handleDropdownChange_Market(null, marketNameOption[marketNameOption?.length -1]);
   // }, []);
@@ -925,7 +950,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket])
 
-  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
+  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""  || error !==''
   const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
@@ -977,7 +1002,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
           borderRadius: '6px',
           color: !isDisabled1 && '#fff',
           background: !isDisabled1 && '#00829B'
-        }} disabled={isDisabled1} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
+        }} disabled={isDisabled1 || error !==''} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
         <PrimaryButton style={{
           marginTop: 15,
           width: 350,
@@ -1012,9 +1037,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            Summary file for selected Period or Market has been </p> <p>generated.
-              Choosing to re-generate will overwrite the existing files.</p>
-          <p className={classNames.paragraph}>Please confirm if you wish to proceed.</p>
+            A Summary file for the selected Period or Market already exists. Kindly note that re-generating the Summary File will overwrite the exisiting files.</p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
@@ -1031,7 +1054,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
           <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {/* <Stack horizontalAlign="center" > */}
             {/* <h2 className={classNames.header}>Hub Notify</h2> */}
-            <p>You are going to send email notification to cantacts below. Please confirm if you wish to proceed.</p>
+            <p>You are going to send email notification to contacts below. Please confirm if you wish to proceed.</p>
             {/* </Stack> */}
             <Label>Summary File:    {selectedKey} </Label>
 
@@ -1063,7 +1086,7 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
                   ))}
             </ul>
             <p className={classNames.paragraph}>
-              Please be aware that there might be a few minutes delay to send the email.</p>
+              Note: Request successfully accepted. System will take couple of minutes to send email.</p>
           </div>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
@@ -1104,6 +1127,24 @@ readExcelFromLibrary("应该写文件名 先写死").then(data => {
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.primaryButton} onClick={hideModalconfirmGenerate}>OK</DefaultButton>
+          </div>
+        </Modal>
+        <Modal
+          titleAriaId={"Error"}
+          isOpen={isModalOpenError}
+          // onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.modal}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Error</h2>
+          {/* </Stack> */}
+          <p className={classNames.paragraph}>
+            {error}</p>
+          <div className={classNames.buttonContainer}>
+            {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
+            <DefaultButton className={classNames.primaryButton} onClick={hideModalError}>OK</DefaultButton>
           </div>
         </Modal>
       </Stack>
