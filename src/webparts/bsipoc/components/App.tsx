@@ -233,15 +233,15 @@ export default memo(function App() {
     }, {});
 
     console.log('group', groupedByMarket);
-    if(selectedKey !== ""){
-    readExcelFromLibrary(selectedKey).then(data => {
-      console.log("excel", data)
-      setVcads({
-        group: groupedByMarket,
-        data,
+    if (selectedKey !== "") {
+      readExcelFromLibrary(selectedKey).then(data => {
+        console.log("excel", data)
+        setVcads({
+          group: groupedByMarket,
+          data,
+        })
       })
-    })
-  }
+    }
 
 
   }
@@ -522,7 +522,10 @@ export default memo(function App() {
         workSheetVCADS.getCell('D' + i).value = d['Description']
         workSheetVCADS.getCell('E' + i).value = d['Amount in USD']
       }
-
+      const totalVcad = countryVcads.reduce((t: number, item: any) => t + Number(item['Amount in USD']), 0)
+      console.log("totalVcad", totalVcad)
+      workSheetVCADS.getCell('A' + (countryVcads.length + 4)).value = 'Total';
+      workSheetVCADS.getCell('E' + (countryVcads.length + 4)).value = totalVcad.toFixed(2);
 
       const wbout = await workbookTemplate.xlsx.writeBuffer()
 
@@ -532,18 +535,38 @@ export default memo(function App() {
             createrFolder(Site_Relative_Links + `/Shared Documents/${selectedKey}`, countryOrders[0].Hub)
           }
         }).then(() => {
-          return new Promise<void>((resolve) => {
+          return new Promise<void>(async (resolve) => {
             // setTimeout(() => {
             //   resolve();
             // }, 3000);
+            // 获取文件夹下的所有文件
+           
             resolve();
           });
         })
-          .then(() => {
+          .then(async () => {
+            const existingFiles = await getFilesInFolder(Site_Relative_Links + `/Shared Documents/${selectedKey}/${countryOrders[0].Hub}`)
+            console.log("exitfile",existingFiles)
+            const fileNames: { [key: string]: boolean } = {};
+            existingFiles.forEach(file => {
+              fileNames[file.Name] = true;
+            });
+              console.log()
+            let fileName = `UD ${Market} ${selectedKey}.xlsx`;
+            let version = 1;
+
+            // 检查文件名是否已经存在，如果存在则添加版本号
+            const baseFileName = `UD ${Market} ${selectedKey}`;
+            const extension = ".xlsx";
+            while (fileNames[fileName]) {
+              fileName = `${baseFileName}_V${version}${extension}`;
+              version++;
+            }
             // 添加上传任务到数组
             const uploadPromise = uploadFileToSP(
               `${Site_Relative_Links}/Shared Documents/${selectedKey}/${countryOrders[0].Hub}`,
-              `UD ${Market} ${selectedKey}.xlsx`,
+              //`UD ${Market} ${selectedKey}.xlsx`,
+              fileName,
               blob
             );
             uploadPromises.push(uploadPromise);
@@ -556,13 +579,26 @@ export default memo(function App() {
       setTimeout(() => {
         // alert("All cost summaries are generated and uploaded successfully.");
         if (error === "") { showModalConfirmGenerate() }
-      }, 500);
+      }, 3000);
       const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
     }).catch(err => {
       console.log("An error occurred during uploading:", err);
     });
   };
+
+
+  // 获取文件夹中的所有文件名
+async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> {
+  try {
+    const files = await sp.web.getFolderByServerRelativePath(folderUrl).files();
+    console.log(files,"files")
+    return files;
+  } catch (error) {
+    console.error("Error fetching files from folder:", error);
+    return [];
+  }
+}
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const initData = async () => {
     let obj: any = {}
@@ -950,7 +986,7 @@ export default memo(function App() {
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket])
 
-  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""  || error !==''
+  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === "" || error !== ''
   const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
@@ -1002,7 +1038,7 @@ export default memo(function App() {
           borderRadius: '6px',
           color: !isDisabled1 && '#fff',
           background: !isDisabled1 && '#00829B'
-        }} disabled={isDisabled1 || error !==''} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
+        }} disabled={isDisabled1 || error !== ''} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
         <PrimaryButton style={{
           marginTop: 15,
           width: 350,
