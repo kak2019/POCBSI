@@ -46,6 +46,7 @@ export default memo(function App() {
   // const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
   // const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const [error, setError] = React.useState("");
+  const [numofmonthVar,setnumofmonthVar] = React.useState(1)
   const classNames = mergeStyleSets({
     modal: {
       width: 500,
@@ -186,6 +187,7 @@ export default memo(function App() {
       obj['Total(Per Month)'] += (priceMap['Hub Package;' + (val.PartnerType)] || 0) * obj['Hub Package']
       obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2) * 1
       obj['Hub'] = val.Hub
+      obj['Quarterly Total'] = obj['Total(Per Month)'].toFixed(2) * numofmonthVar
       // console.log("obj3232",obj)
       //  console.log("price,ap",priceMap)
 
@@ -256,6 +258,8 @@ export default memo(function App() {
       console.log(period, selectedKeyPeriod)
       numMonth = period.filter((per: any) => per.text === selectedKey)[0].nummonth
       console.log("nummonth1", numMonth)
+    
+
     }
     console.log("nummonth2", numMonth)
 
@@ -325,7 +329,8 @@ export default memo(function App() {
     const total = resObj.data.reduce((t: number, e: any) => t + Number(e.E), 0)
     resObj.data.push({
       A: 'Total',
-      E: total.toFixed(2) * 1
+      E: total.toFixed(2) * 1,
+      
     })
 
     // 分离出包含"Package"的项和其他项
@@ -392,7 +397,7 @@ export default memo(function App() {
     })
 
     const worksheetDetail = workbook.getWorksheet(2)
-    const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P', "Q"]
+    const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P', "Q","R"]
     zimu.forEach(z => {
       worksheetDetail.getCell(z + '2').fill = {
         type: 'pattern',
@@ -432,6 +437,7 @@ export default memo(function App() {
 
 
   const handleExport = async (): Promise<void> => {
+    
     // 创建一个数组来存储所有的上传Promise
     const uploadPromises: any[] = [];
 
@@ -494,7 +500,7 @@ export default memo(function App() {
       for (let i = 1; i <= 100; i++) {
         workSheetDetails.addRow([]);
       }
-      const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q']
+      const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q','R']
       for (let i = 3; i < countryOrders.length + 3; i++) {
         let j = 0;
         for (let key in countryOrders[i - 3]) {
@@ -502,12 +508,16 @@ export default memo(function App() {
           workSheetDetails.getCell(zimu[j] + (i + 1)).value = countryOrders[i - 3][key];
           j++
         }
+        console.log(numofmonthVar,"num")
+         workSheetDetails.getCell('R' + (i + 1)).value = countryOrders[i - 3]["Quarterly Total"] * numofmonthVar ;
       }
 
 
       const total = countryOrders.reduce((t: number, item: any) => t + Number(item['Total(Per Month)']), 0)
       workSheetDetails.getCell('A' + (countryOrders.length + 4)).value = 'Total';
       workSheetDetails.getCell('Q' + (countryOrders.length + 4)).value = total.toFixed(2);
+      const quartlytotal = countryOrders.reduce((t: number, item: any) => t + Number(item['Quarterly Total']), 0) 
+      workSheetDetails.getCell('R' + (countryOrders.length + 4)).value = quartlytotal.toFixed(2);
 
       // 拿到一个名为“VCADS”的新工作表
       const workSheetVCADS = workbookTemplate.getWorksheet(3);
@@ -736,7 +746,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
         perioddetails_init = details
         console.log("erioddetails", perioddetails_init)
         setperiodDetails(details)
-
+        
 
       }
       // console.log("respackage", response.Row.filter((item)=>item.field_2))
@@ -747,7 +757,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
       //   })
       //   return resObj
       // }
-
+      
       return {}
     })
 
@@ -874,6 +884,14 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
     console.log("excel121", finalExcelData)
     calcToVcads(order)
     setExcel(finalExcelData)
+    let numMonth = 1
+    if (selectedKey !== "") {
+      console.log(periodDetails, selectedKeyPeriod)
+      numMonth = periodDetails.filter((per: any) => per.text === selectedKey)[0].nummonth
+      console.log("nummonth1", numMonth)
+      setnumofmonthVar(numMonth)
+
+    }
   }
 
   // 提取错误信息中的 message 字段
