@@ -990,7 +990,8 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
   const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
-    <div className={styles.uploadPage}>
+    //className={styles.uploadPage}
+    <div >
       <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
 
 
