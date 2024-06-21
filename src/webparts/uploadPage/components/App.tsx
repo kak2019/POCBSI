@@ -191,7 +191,7 @@ export default memo(function App() {
           Market:item.Market,
           Partner_x0020_ID:item.PartnerID,
           S410WVOCOM:item["S410 W VOCOM"],
-          S410W_x002f_OVOCOM:item["S410 W VOCOM"],
+          S410W_x002f_OVOCOM:item["S410 W/O VOCOM"],
           V110WVOCOM:item["V110 W VOCOM"],
           V110W_x002f_OVOCOM:item["V110 W/O VOCOM"],
           HWI:item.HWI,
@@ -340,7 +340,7 @@ export default memo(function App() {
           const headers = jsonData[0] as string[];
           const isValid = validateHeaders(headers);
           if (!isValid) {
-            setError('文件的第一行必须包含 Dealer ID, Application, Machine No, Description, Amount in USD');
+            setError('The first line of the file must contain Dealer ID, Application, Machine No, Description, Amount in USD');
             return;
           }
           setFile(file)
@@ -382,7 +382,7 @@ export default memo(function App() {
         await sp.web.getFolderByServerRelativePath('VCAD Documents').files.addUsingPath(selectedKey + uploadFile.name.substring(uploadFile.name.lastIndexOf('.')), uploadFile, { Overwrite: true });
       }
       const a = updateResultsWithMarkets(data,groupedByMarketlist).filter(item => 
-        (item['S410 W VOCOM']>0 || item['HWI']>0 || item['S410W_x002f_OVOCOM']>0 || item['V110WVOCOM']>0 || item['V110W_x002f_OVOCOM']>0 ))
+        (item['S410 W VOCOM']>0 || item['HWI']>0 || item['S410 W/O VOCOM']>0 || item['V110 W VOCOM']>0 || item['V110 W/O VOCOM']>0 ))
       console.log(a)
       if(fileExistFlag){deleteItemsByPeriod(selectedKey)}
       addMultipleItems(a)
@@ -499,6 +499,7 @@ const updateResultsWithMarkets = (results: any[], marketDealerMapping: { [market
       }
     }
   });
+  console.log("res",results)
   return results;
 };
 function findmarket (detail:any){
