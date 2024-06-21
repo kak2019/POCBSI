@@ -139,7 +139,7 @@ export default memo(function App() {
 
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  function calcToExcel(orders: any, priceMap: any, map: any) {
+  function calcToExcel(orders: any, priceMap: any, map: any, numberMonth: number) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return orders.map((val: any) => {
       const obj: any = {
@@ -186,8 +186,8 @@ export default memo(function App() {
       obj['Total(Per Month)'] += (priceMap['Sales Package;' + (val.PartnerType)] || 0) * obj['Sales Package']
       obj['Total(Per Month)'] += (priceMap['Hub Package;' + (val.PartnerType)] || 0) * obj['Hub Package']
       obj['Total(Per Month)'] = obj['Total(Per Month)'].toFixed(2) * 1
+      obj['Quarterly Total'] = obj['Total(Per Month)'].toFixed(2) * numberMonth
       obj['Hub'] = val.Hub
-      obj['Quarterly Total'] = obj['Total(Per Month)'].toFixed(2) * numofmonthVar
       // console.log("obj3232",obj)
       //  console.log("price,ap",priceMap)
 
@@ -508,8 +508,8 @@ export default memo(function App() {
           workSheetDetails.getCell(zimu[j] + (i + 1)).value = countryOrders[i - 3][key];
           j++
         }
-        console.log(numofmonthVar,"num")
-         workSheetDetails.getCell('R' + (i + 1)).value = countryOrders[i - 3]["Quarterly Total"] * numofmonthVar ;
+        // console.log(numofmonthVar,"num")
+        //  workSheetDetails.getCell('R' + (i + 1)).value = countryOrders[i - 3]["Quarterly Total"] * numofmonthVar ;
       }
 
 
@@ -871,19 +871,6 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
       return []
     })
 
-    const price = {
-      ...appObj,
-      ...packageObj
-    }
-    setPrice(price)
-    setNameObj(obj)
-    setVcadsCount(vcadsCount)
-    console.log('price', price)
-    const finalExcelData = calcToExcel(order, price, obj)
-
-    console.log("excel121", finalExcelData)
-    calcToVcads(order)
-    setExcel(finalExcelData)
     let numMonth = 1
     if (selectedKey !== "") {
       console.log(periodDetails, selectedKeyPeriod)
@@ -892,6 +879,19 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
       setnumofmonthVar(numMonth)
 
     }
+    const price = {
+      ...appObj,
+      ...packageObj
+    }
+    setPrice(price)
+    setNameObj(obj)
+    setVcadsCount(vcadsCount)
+    console.log('price', price)
+    const finalExcelData = calcToExcel(order, price, obj, numMonth)
+
+    console.log("excel121", finalExcelData)
+    calcToVcads(order)
+    setExcel(finalExcelData)
   }
 
   // 提取错误信息中的 message 字段
