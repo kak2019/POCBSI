@@ -46,6 +46,7 @@ export default memo(function App() {
   // const [isDraggable, { toggle: toggleIsDraggable }] = useBoolean(false);
   // const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const [error, setError] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
   const [numofmonthVar,setnumofmonthVar] = React.useState(1)
   const classNames = mergeStyleSets({
     modal: {
@@ -923,8 +924,9 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
   }
   // 应用单价（每人）表
   useEffect(() => {
+    setIsLoading(true);
+    initData().then(res=>setTimeout(()=>setIsLoading(false),1000)).catch(err => setIsLoading(false))
     setError("")
-    initData().then(res => res).catch(err => err)
   }, [selectedKey])
   //   useEffect(() => {
   //     handleDropdownChange_Market(null, marketNameOption[marketNameOption?.length -1]);
@@ -1004,8 +1006,8 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket])
 
-  const isDisabled1 = excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === "" || error !== ''
-  const isDisabled2 = excel.length === 0 || selectedKey === '' || !fileExistState
+  const isDisabled1 = isLoading||excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === "" || error !== ''
+  const isDisabled2 = isLoading||excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
     //className={styles.uploadPage}
@@ -1092,7 +1094,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            A Summary file for the selected Period or Market already exists. Kindly note that re-generating the Summary File will overwrite the exisiting files.</p>
+            A Summary file for the selected Period or Market already exists. Add suffix _V1, _V2 etc for newly generated file. Confirmed yes.</p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
