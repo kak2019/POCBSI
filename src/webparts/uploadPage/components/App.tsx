@@ -652,7 +652,7 @@ function findmarket (detail:any){
             <Button style={{
               width: 80, height: 42, marginTop: '2px', borderRadius: '6px', color: '#fff',
               background: '#00829B', alignItems: 'center'
-            }} onClick={() => window.location.href = webURL + "/sitepages/CollabHome.aspx"}>OK </Button></Stack>
+            }} onClick={() =>setTimeout(()=> window.location.href = webURL + "/sitepages/CollabHome.aspx",3000)}>OK </Button></Stack>
         </div>}
       <Modal open={isShowModal} closable={false} footer={null} width={500} style={{ borderRadius: '6px', overflow: 'hidden', paddingBottom: 0 }}>
         <Stack verticalAlign="center" style={{ alignItems: 'center', paddingTop: '64px', paddingBottom: '54px' }}>

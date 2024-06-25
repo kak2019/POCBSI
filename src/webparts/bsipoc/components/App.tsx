@@ -1094,7 +1094,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            A Summary file for the selected Period or Market already exists. Add suffix _V1, _V2 etc for newly generated file. Confirmed yes.</p>
+          A Summary file for the selected Period or Market already exists. The new file that will be created is going to have a version number suffix added to it for differentiation. Please take note of this. </p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
@@ -1143,7 +1143,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
                   ))}
             </ul>
             <p className={classNames.paragraph}>
-              Note: Request successfully accepted. System will take couple of minutes to send email.</p>
+            Note: Request successfully accepted. The email will be sent in a few minutes.</p>
           </div>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
