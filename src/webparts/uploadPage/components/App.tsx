@@ -523,6 +523,14 @@ function findmarket (detail:any){
     initData().then(res => res).catch(err => err)
   }, [])
 
+
+  const handleClick = () => {
+    const webUni = webURL + "/sitepages/CollabHome.aspx"; // 替换为实际的 URL
+    window.location.assign(`${webUni}/sitepages/CollabHome.aspx`);
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 可以根据需要调整延迟时间
+  };
   return (
     <div className={styles.uploadPage}>
 {/* <Button onClick = {()=>deleteItemsByPeriod(selectedKey)}> 按钮</Button> */}
@@ -532,7 +540,7 @@ function findmarket (detail:any){
         buttonvisible ? <div className={styles.content}>
           <Stack horizontal>
             <Icon style={{ fontSize: "14px", color: '#00829B' }} iconName="Back" />
-            <span style={{ marginLeft: '8px', color: '#00829B' }} ><a href={webURL + "/sitepages/CollabHome.aspx"} style={{ color: '#00829B', fontSize: "12px" }}>Return to home</a></span>
+            <span style={{ marginLeft: '8px', color: '#00829B' }} ><a  onClick={handleClick} style={{ color: '#00829B', fontSize: "12px" }}>Return to home</a></span>
           </Stack>
           <div className={styles.title}>Upload VCAD File</div>
           <Stack horizontal horizontalAlign="space-between" style={{ marginBottom: '8px' }}>
