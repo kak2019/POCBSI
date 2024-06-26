@@ -538,10 +538,10 @@ function findmarket (detail:any){
             <Button onClick={()=> readExcelFromLibrary("222")}> 提交测试</Button> */}
       {
         buttonvisible ? <div className={styles.content}>
-          <Stack horizontal>
+          {/* <Stack horizontal>
             <Icon style={{ fontSize: "14px", color: '#00829B' }} iconName="Back" />
             <span style={{ marginLeft: '8px', color: '#00829B' }} ><a  onClick={handleClick} style={{ color: '#00829B', fontSize: "12px" }}>Return to home</a></span>
-          </Stack>
+          </Stack> */}
           <div className={styles.title}>Upload VCAD File</div>
           <Stack horizontal horizontalAlign="space-between" style={{ marginBottom: '8px' }}>
             {/* <div className={styles.subTitle}>Upload an excel document</div> */}
