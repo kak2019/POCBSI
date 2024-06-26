@@ -30,7 +30,7 @@ import Error from '../assets/error'
 import AppContext from "../../../common/AppContext";
 import Viewhistory from '../assets/submit';
 // import HintIcon from "../assets/hinticon"
-import "./App.css";
+// import "./App.css";
 
 
 import { countByRules } from "./utils/handledata"
