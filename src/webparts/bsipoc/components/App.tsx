@@ -216,8 +216,9 @@ export default memo(function App() {
       return jsonData;
     } catch (err) {
       console.error("Error reading Excel file from library", err);
-      setError(extractMessage(err.message))
-      showModalError()
+      setError(`There is no VCADs data uploaded for period ${selectedKey}.
+      The VCADs summary will not be generated.
+      Do you want to continue?`)
       hideModalconfirmGenerate()
     }
   }
@@ -522,21 +523,24 @@ export default memo(function App() {
 
       // 拿到一个名为“VCADS”的新工作表
       const workSheetVCADS = workbookTemplate.getWorksheet(3);
-      const countryVcads = vcads.data.filter(item => (vcads.group as any)[Market].includes(item['Dealer ID'].toString()))
-      console.log('vcads', countryVcads)
-      // 在VCADS工作表中添加数据
-      for (let i = 3; i < countryVcads.length + 3; i++) {
-        const d = countryVcads[i - 3]
-        workSheetVCADS.getCell('A' + i).value = d['Dealer ID']
-        workSheetVCADS.getCell('B' + i).value = d['Application']
-        workSheetVCADS.getCell('C' + i).value = d['Machine No']
-        workSheetVCADS.getCell('D' + i).value = d['Description']
-        workSheetVCADS.getCell('E' + i).value = d['Amount in USD']
+      if(vcads.data) {
+        const countryVcads = vcads.data.filter(item => (vcads.group as any)[Market].includes(item['Dealer ID'].toString()))
+        console.log('vcads', countryVcads)
+        // 在VCADS工作表中添加数据
+        for (let i = 3; i < countryVcads.length + 3; i++) {
+          const d = countryVcads[i - 3]
+          workSheetVCADS.getCell('A' + i).value = d['Dealer ID']
+          workSheetVCADS.getCell('B' + i).value = d['Application']
+          workSheetVCADS.getCell('C' + i).value = d['Machine No']
+          workSheetVCADS.getCell('D' + i).value = d['Description']
+          workSheetVCADS.getCell('E' + i).value = d['Amount in USD']
+        }
+        const totalVcad = countryVcads.reduce((t: number, item: any) => t + Number(item['Amount in USD']), 0)
+        console.log("totalVcad", totalVcad)
+        workSheetVCADS.getCell('A' + (countryVcads.length + 4)).value = 'Total';
+        workSheetVCADS.getCell('E' + (countryVcads.length + 4)).value = totalVcad.toFixed(2);
       }
-      const totalVcad = countryVcads.reduce((t: number, item: any) => t + Number(item['Amount in USD']), 0)
-      console.log("totalVcad", totalVcad)
-      workSheetVCADS.getCell('A' + (countryVcads.length + 4)).value = 'Total';
-      workSheetVCADS.getCell('E' + (countryVcads.length + 4)).value = totalVcad.toFixed(2);
+      
 
       const wbout = await workbookTemplate.xlsx.writeBuffer()
 
@@ -587,9 +591,10 @@ export default memo(function App() {
     });
     // 等待所有文件上传完成
     Promise.all(uploadPromises).then(() => {
+      console.log(error,"errorrrrrrr")
       setTimeout(() => {
         // alert("All cost summaries are generated and uploaded successfully.");
-        if (error === "") { showModalConfirmGenerate() }
+        showModalConfirmGenerate() 
       }, 3000);
       const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
@@ -1006,7 +1011,7 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket])
 
-  const isDisabled1 = isLoading||excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === "" || error !== ''
+  const isDisabled1 = isLoading||excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
   const isDisabled2 = isLoading||excel.length === 0 || selectedKey === '' || !fileExistState
 
   return (
@@ -1059,7 +1064,13 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
           borderRadius: '6px',
           color: !isDisabled1 && '#fff',
           background: !isDisabled1 && '#00829B'
-        }} disabled={isDisabled1 || error !== ''} onClick={() => handleCreateFolder()}>Generate Summary File </PrimaryButton>
+        }} disabled={isDisabled1} onClick={() => {
+          if(error) {
+            showModalError()
+          } else {
+            handleCreateFolder()
+          }
+        }}>Generate Summary File </PrimaryButton>
         <PrimaryButton style={{
           marginTop: 15,
           width: 350,
@@ -1189,19 +1200,28 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
         <Modal
           titleAriaId={"Error"}
           isOpen={isModalOpenError}
-          // onDismiss={hideModal}
+          onDismiss={hideModalError}
           isBlocking={false}
           containerClassName={classNames.modal}
         // dragOptions={isDraggable ? dragOptions : undefined}
         >
           {/* <Stack horizontalAlign="center" > */}
-          <h2 className={classNames.header}>Error</h2>
+          <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
             {error}</p>
           <div className={classNames.buttonContainer}>
-            {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
-            <DefaultButton className={classNames.primaryButton} onClick={hideModalError}>OK</DefaultButton>
+            <PrimaryButton className={classNames.primaryButton} onClick={() => {
+               hideModalError()
+               
+               setError("")
+              
+          
+              handleCreateFolder(true)
+            }}>Yes</PrimaryButton>
+            <DefaultButton className={classNames.button} onClick={() => {
+              hideModalError()
+            }}>No</DefaultButton>
           </div>
         </Modal>
       </Stack>
