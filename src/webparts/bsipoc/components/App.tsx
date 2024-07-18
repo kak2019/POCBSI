@@ -216,9 +216,10 @@ export default memo(function App() {
       return jsonData;
     } catch (err) {
       console.error("Error reading Excel file from library", err);
-      setError(`There is no VCADs data uploaded for period ${selectedKey}.
-      The VCADs summary will not be generated.
-      Do you want to continue?`)
+      // setError(`There is no VCADs data uploaded for period ${selectedKey}.
+      // The VCADs summary will not be generated.
+      // Do you want to continue?`)
+      setError(`Since the VCAD information for this period is missing, no VCAD summary will be generated. If you wish to continue, please select "Yes"`)
       hideModalconfirmGenerate()
     }
   }
@@ -645,7 +646,7 @@ const fetchVcadsCount = async () => {
     let obj: any = {}
     let perioddetails_init = {}
     // 拿应用价格表
-    const appObj = await sp.web.lists.getByTitle("ApplicationPriceMaster").renderListDataAsStream({
+    const appObj = await sp.web.lists.getByTitle("Application Price Master").renderListDataAsStream({
       /* 字段关系如下
       Title ===Application Name
       field_1 = Price Type
@@ -703,7 +704,7 @@ const fetchVcadsCount = async () => {
 
 
     // 拿包的单价表
-    const packageObj = await sp.web.lists.getByTitle("PackageMaster").renderListDataAsStream({
+    const packageObj = await sp.web.lists.getByTitle("Package Master").renderListDataAsStream({
       /* 字段关系如下
       Title ===Package Name
       field_1 = PartnerType
@@ -1137,7 +1138,7 @@ const fetchVcadsCount = async () => {
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          A Summary file for the selected Period or Market already exists. The new file that will be created is going to have a version number suffix added to it for differentiation. Please take note of this. </p>
+          A Summary File for the selected Period or Market already exists. Therefore, the new file name will include a suffix with its version number for recognition purposes.</p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
