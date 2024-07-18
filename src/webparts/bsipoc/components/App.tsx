@@ -615,6 +615,31 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
     return [];
   }
 }
+const fetchVcadsCount = async () => {
+  const sp = spfi(getSP()); // 初始化SP实例
+  try {
+      let items: any[] = [];
+      let pager = await sp.web.lists
+          .getByTitle("VCAD Summary")
+          .items.select("Market", "S410WVOCOM", "S410W_x002f_OVOCOM", "V110WVOCOM", "V110W_x002f_OVOCOM", "HWI", "Period", "Partner_x0020_ID")
+          .top(5000) // 每页最大条目数
+          .getPaged();
+
+      items = items.concat(pager.results);
+      while (pager.hasNext) {
+          const response = await pager.getNext();
+          items = items.concat(response.results);
+          pager = response;
+      }
+
+      return items;
+  } catch (err) {
+      console.log(err);
+      return Promise.reject("Error when fetching VCAD Summary data");
+  }
+};
+
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const initData = async () => {
     let obj: any = {}
@@ -653,27 +678,28 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
       return {}
     })
 
-    // 拿vcads数量表
-    const vcadsCount = await sp.web.lists.getByTitle("VCAD Summary").renderListDataAsStream({
-      ViewXml: `<View>
-                      <ViewFields>
-                        <FieldRef Name="Market"/>
-                        <FieldRef Name="S410WVOCOM"/>
-                        <FieldRef Name="S410W_x002f_OVOCOM"/>
-                        <FieldRef Name="V110WVOCOM"/>
-                        <FieldRef Name="V110W_x002f_OVOCOM"/>
-                        <FieldRef Name="HWI"/>
-                        <FieldRef Name="Period"/>
-                        <FieldRef Name="Partner_x0020_ID"/>
-                      </ViewFields>
+    // // 拿vcads数量表 被fetchVcadsCount 替换 预防超过五千条拿不到的问题
+    // const vcadsCount = await sp.web.lists.getByTitle("VCAD Summary").renderListDataAsStream({
+    //   ViewXml: `<View>
+    //                   <ViewFields>
+    //                     <FieldRef Name="Market"/>
+    //                     <FieldRef Name="S410WVOCOM"/>
+    //                     <FieldRef Name="S410W_x002f_OVOCOM"/>
+    //                     <FieldRef Name="V110WVOCOM"/>
+    //                     <FieldRef Name="V110W_x002f_OVOCOM"/>
+    //                     <FieldRef Name="HWI"/>
+    //                     <FieldRef Name="Period"/>
+    //                     <FieldRef Name="Partner_x0020_ID"/>
+    //                   </ViewFields>
                    
-                    </View>`,
-      // <RowLimit>400</RowLimit>
-    }).then((response) => {
-      console.log("vcads数量表", response.Row)
-      // console.log("resAPP", response.Row.filter((item)=>item.field_2))
-      return response.Row
-    })
+    //                 </View>`,
+    //   // <RowLimit>400</RowLimit>
+    // }).then((response) => {
+    //   console.log("vcads数量表", response.Row)
+    //   // console.log("resAPP", response.Row.filter((item)=>item.field_2))
+    //   return response.Row
+    // })
+
 
 
     // 拿包的单价表
@@ -891,7 +917,13 @@ async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> 
     }
     setPrice(price)
     setNameObj(obj)
-    setVcadsCount(vcadsCount)
+    fetchVcadsCount().then(vcadsCount => {
+      setVcadsCount(vcadsCount)
+      console.log("vcads数量表", vcadsCount);
+  }).catch(error => {
+      console.error("Error fetching VCAD Summary data", error);
+  });
+    
     console.log('price', price)
     const finalExcelData = calcToExcel(order, price, obj, numMonth)
 
