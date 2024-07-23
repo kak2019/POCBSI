@@ -29,8 +29,32 @@ import { addRequest, } from '../assets/request'
 // ];
 
 const dropdownStyles: Partial<IDropdownStyles> = {
-  root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 230, marginRight: 60, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
-  dropdown: { ':focus::after': { border: 'none' }, width: 230 },
+  root: { 
+    background: '#fff', 
+    display: 'flex', 
+    flexShrink: 0, 
+    alignItems: 'center', 
+    width: 180, 
+    marginRight: 20, 
+    fontSize: '14px', 
+    height: 30, 
+    color: '#191919', 
+    border: '1px solid #454545', 
+    borderRadius: '10px',
+    selectors: {
+      ':disabled': {
+        backgroundColor: '#f3f2f1', // 禁用状态下的背景颜色
+        color: '#a19f9d', // 禁用状态下的文本颜色
+        border: '1px solid #d3d3d3', // 禁用状态下的边框颜色
+      },
+    },
+  },
+  dropdown: { ':focus::after': { border: 'none' }, width: 180 },
+  title: { border: 'none', background: 'none' }
+};
+const dropdownStylesHubandPeriod: Partial<IDropdownStyles> = {
+  root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 130, marginRight: 20, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
+  dropdown: { ':focus::after': { border: 'none' }, width: 130 },
   title: { border: 'none', background: 'none' }
 };
 
@@ -47,7 +71,7 @@ export default memo(function App() {
   // const [keepInBounds, { toggle: toggleKeepInBounds }] = useBoolean(false);
   const [error, setError] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [numofmonthVar,setnumofmonthVar] = React.useState(1)
+  const [numofmonthVar, setnumofmonthVar] = React.useState(1)
   const classNames = mergeStyleSets({
     modal: {
       width: 500,
@@ -124,17 +148,34 @@ export default memo(function App() {
     if (item) {
       setSelectedKeyPeriod(item.key as string);
       setSelectedKey(item.text as string);
-      const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
-
+      //const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
+      
     }
 
   };
   // Market 选项
   const [selectedKeyMarket, setSelectedKeyMarket] = React.useState<string>('');
   const [marketNameOption, setMarketNameOption] = React.useState<IDropdownOption[]>()
+  // Hub 选项
+  const [HubNameOption, setHubNameOption] = React.useState<IDropdownOption[]>()
+  const [HubNameOptionValue, setHubNameOptionValue] = React.useState<string>("")
+
   const handleDropdownChange_Market = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
     if (item) {
       setSelectedKeyMarket(item.key as string);
+    }
+  };
+  const handleDropdownChange_Hub = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
+    if (item) {
+      setMarketNameOption(allCountryandHub.filter(i=>item.key === i.Hub).map(i=>({key:i.market,text:i.market})))
+      setHubNameOptionValue(item.text)
+      if(item.text ==="ALL"){
+        const value = doesFolderExist("Shared Documents/", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
+      }else{
+        const value = doesFolderExist("Shared Documents/"+selectedKey, item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
+      }
+      
+      // setSelectedKeyMarket(item.key as string);
     }
   };
 
@@ -261,7 +302,7 @@ export default memo(function App() {
       console.log(period, selectedKeyPeriod)
       numMonth = period.filter((per: any) => per.text === selectedKey)[0].nummonth
       console.log("nummonth1", numMonth)
-    
+
 
     }
     console.log("nummonth2", numMonth)
@@ -333,7 +374,7 @@ export default memo(function App() {
     resObj.data.push({
       A: 'Total',
       E: total.toFixed(2) * 1,
-      
+
     })
 
     // 分离出包含"Package"的项和其他项
@@ -400,7 +441,7 @@ export default memo(function App() {
     })
 
     const worksheetDetail = workbook.getWorksheet(2)
-    const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P', "Q","R"]
+    const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'N', 'M', 'O', 'P', "Q", "R"]
     zimu.forEach(z => {
       worksheetDetail.getCell(z + '2').fill = {
         type: 'pattern',
@@ -440,7 +481,7 @@ export default memo(function App() {
 
 
   const handleExport = async (): Promise<void> => {
-    
+
     // 创建一个数组来存储所有的上传Promise
     const uploadPromises: any[] = [];
 
@@ -503,7 +544,7 @@ export default memo(function App() {
       for (let i = 1; i <= 100; i++) {
         workSheetDetails.addRow([]);
       }
-      const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q','R']
+      const zimu = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
       for (let i = 3; i < countryOrders.length + 3; i++) {
         let j = 0;
         for (let key in countryOrders[i - 3]) {
@@ -519,12 +560,12 @@ export default memo(function App() {
       const total = countryOrders.reduce((t: number, item: any) => t + Number(item['Total(Per Month)']), 0)
       workSheetDetails.getCell('A' + (countryOrders.length + 4)).value = 'Total';
       workSheetDetails.getCell('Q' + (countryOrders.length + 4)).value = total.toFixed(2);
-      const quartlytotal = countryOrders.reduce((t: number, item: any) => t + Number(item['Quarterly Total']), 0) 
+      const quartlytotal = countryOrders.reduce((t: number, item: any) => t + Number(item['Quarterly Total']), 0)
       workSheetDetails.getCell('R' + (countryOrders.length + 4)).value = quartlytotal.toFixed(2);
 
       // 拿到一个名为“VCADS”的新工作表
       const workSheetVCADS = workbookTemplate.getWorksheet(3);
-      if(vcads.data) {
+      if (vcads.data) {
         const countryVcads = vcads.data.filter(item => (vcads.group as any)[Market].includes(item['Dealer ID'].toString()))
         console.log('vcads', countryVcads)
         // 在VCADS工作表中添加数据
@@ -541,7 +582,7 @@ export default memo(function App() {
         workSheetVCADS.getCell('A' + (countryVcads.length + 4)).value = 'Total';
         workSheetVCADS.getCell('E' + (countryVcads.length + 4)).value = totalVcad.toFixed(2);
       }
-      
+
 
       const wbout = await workbookTemplate.xlsx.writeBuffer()
 
@@ -556,18 +597,18 @@ export default memo(function App() {
             //   resolve();
             // }, 3000);
             // 获取文件夹下的所有文件
-           
+
             resolve();
           });
         })
           .then(async () => {
             const existingFiles = await getFilesInFolder(Site_Relative_Links + `/Shared Documents/${selectedKey}/${countryOrders[0].Hub}`)
-            console.log("exitfile",existingFiles)
+            console.log("exitfile", existingFiles)
             const fileNames: { [key: string]: boolean } = {};
             existingFiles.forEach(file => {
               fileNames[file.Name] = true;
             });
-              console.log()
+            console.log()
             let fileName = `UD ${Market} ${selectedKey}.xlsx`;
             let version = 1;
 
@@ -592,10 +633,10 @@ export default memo(function App() {
     });
     // 等待所有文件上传完成
     Promise.all(uploadPromises).then(() => {
-      console.log(error,"errorrrrrrr")
+      console.log(error, "errorrrrrrr")
       setTimeout(() => {
         // alert("All cost summaries are generated and uploaded successfully.");
-        showModalConfirmGenerate() 
+        showModalConfirmGenerate()
       }, 3000);
       const value = doesFolderExist("Shared Documents", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       // setSelectedKey("")
@@ -606,39 +647,39 @@ export default memo(function App() {
 
 
   // 获取文件夹中的所有文件名
-async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> {
-  try {
-    const files = await sp.web.getFolderByServerRelativePath(folderUrl).files();
-    console.log(files,"files")
-    return files;
-  } catch (error) {
-    console.error("Error fetching files from folder:", error);
-    return [];
+  async function getFilesInFolder(folderUrl: string): Promise<{ Name: string }[]> {
+    try {
+      const files = await sp.web.getFolderByServerRelativePath(folderUrl).files();
+      console.log(files, "files")
+      return files;
+    } catch (error) {
+      console.error("Error fetching files from folder:", error);
+      return [];
+    }
   }
-}
-const fetchVcadsCount = async () => {
-  const sp = spfi(getSP()); // 初始化SP实例
-  try {
+  const fetchVcadsCount = async () => {
+    const sp = spfi(getSP()); // 初始化SP实例
+    try {
       let items: any[] = [];
       let pager = await sp.web.lists
-          .getByTitle("VCAD Summary")
-          .items.select("Market", "S410WVOCOM", "S410W_x002f_OVOCOM", "V110WVOCOM", "V110W_x002f_OVOCOM", "HWI", "Period", "Partner_x0020_ID")
-          .top(5000) // 每页最大条目数
-          .getPaged();
+        .getByTitle("VCAD Summary")
+        .items.select("Market", "S410WVOCOM", "S410W_x002f_OVOCOM", "V110WVOCOM", "V110W_x002f_OVOCOM", "HWI", "Period", "Partner_x0020_ID")
+        .top(5000) // 每页最大条目数
+        .getPaged();
 
       items = items.concat(pager.results);
       while (pager.hasNext) {
-          const response = await pager.getNext();
-          items = items.concat(response.results);
-          pager = response;
+        const response = await pager.getNext();
+        items = items.concat(response.results);
+        pager = response;
       }
 
       return items;
-  } catch (err) {
+    } catch (err) {
       console.log(err);
       return Promise.reject("Error when fetching VCAD Summary data");
-  }
-};
+    }
+  };
 
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -692,7 +733,7 @@ const fetchVcadsCount = async () => {
     //                     <FieldRef Name="Period"/>
     //                     <FieldRef Name="Partner_x0020_ID"/>
     //                   </ViewFields>
-                   
+
     //                 </View>`,
     //   // <RowLimit>400</RowLimit>
     // }).then((response) => {
@@ -779,7 +820,7 @@ const fetchVcadsCount = async () => {
         perioddetails_init = details
         console.log("erioddetails", perioddetails_init)
         setperiodDetails(details)
-        
+
 
       }
       // console.log("respackage", response.Row.filter((item)=>item.field_2))
@@ -790,7 +831,7 @@ const fetchVcadsCount = async () => {
       //   })
       //   return resObj
       // }
-      
+
       return {}
     })
 
@@ -893,11 +934,28 @@ const fetchVcadsCount = async () => {
 
         uniqueMarket.push("ALL");
         // console.log("hhh",uniqueMarket);
+        // 使用 Map 去重，确保每个 Hub 只出现一次
+        const uniqueHub = Array.from(
+          response.Row.reduce((map, item) => {
+            if (!map.has(item.Hub)) {
+              map.set(item.Hub, item);
+            }
+            return map;
+          }, new Map()).values()
+        );
+        // 将去重后的对象数组映射为所需的格式
+        uniqueHub.push({Hub:"ALL"})
+        const hubOptions = uniqueHub.map((item:{Hub:string}) => ({ key: item.Hub, text: item.Hub })).sort((a,b) => a.text.localeCompare(b.text));
 
-        setMarketNameOption(uniqueMarket.map(market => ({
-          key: market,
-          text: market
-        })).sort((a, b) => a.text.localeCompare(b.text)))
+        console.log(hubOptions);
+
+        // 使用 hubOptions 调用 setHubNameOption
+        setHubNameOption(hubOptions);
+        // 注释掉Market 选项
+        // setMarketNameOption(uniqueMarket.map(market => ({
+        //   key: market,
+        //   text: market
+        // })).sort((a, b) => a.text.localeCompare(b.text)))
         //setAllCountry
         return response.Row
       }
@@ -921,10 +979,10 @@ const fetchVcadsCount = async () => {
     fetchVcadsCount().then(vcadsCount => {
       setVcadsCount(vcadsCount)
       console.log("vcads数量表", vcadsCount);
-  }).catch(error => {
+    }).catch(error => {
       console.error("Error fetching VCAD Summary data", error);
-  });
-    
+    });
+
     console.log('price', price)
     const finalExcelData = calcToExcel(order, price, obj, numMonth)
 
@@ -963,7 +1021,8 @@ const fetchVcadsCount = async () => {
   // 应用单价（每人）表
   useEffect(() => {
     setIsLoading(true);
-    initData().then(res=>setTimeout(()=>setIsLoading(false),1000)).catch(err => setIsLoading(false))
+    setHubNameOptionValue("")
+    initData().then(res => setTimeout(() => setIsLoading(false), 1000)).catch(err => setIsLoading(false))
     setError("")
   }, [selectedKey])
   //   useEffect(() => {
@@ -1010,7 +1069,7 @@ const fetchVcadsCount = async () => {
     })
     // console.log("aaaaa", a)
     const request = {
-      Hub: selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
+      Hub: HubNameOptionValue === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
       FileMainLink: filelink,
 
     }
@@ -1036,16 +1095,16 @@ const fetchVcadsCount = async () => {
 
   useEffect(() => {
     let filelink;
-    if (selectedKeyMarket === "ALL") {
+    if (HubNameOptionValue === "ALL") {
       filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/`
     } else {
-      filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
+      filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${HubNameOptionValue === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
     }
     setfilelink(filelink)
-  }, [selectedKey, selectedKeyMarket])
+  }, [selectedKey, selectedKeyMarket,HubNameOptionValue])
 
-  const isDisabled1 = isLoading||excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
-  const isDisabled2 = isLoading||excel.length === 0 || selectedKey === '' || !fileExistState
+  const isDisabled1 = isLoading || excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
+  const isDisabled2 = isLoading || excel.length === 0 || HubNameOptionValue === '' || !fileExistState
 
   return (
     //className={styles.uploadPage}
@@ -1054,26 +1113,36 @@ const fetchVcadsCount = async () => {
 
 
 
-      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 10 }}>
-        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>Select Period</Label>
+      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 5 }}>
+        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Period</Label>
         <Dropdown
           options={periodNameOption}
-          styles={dropdownStyles}
+          styles={dropdownStylesHubandPeriod}
           onChange={handleDropdownChange_Period}
         />
         {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
       </Stack>
-      <Stack horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 10 }}>
-        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>Select Market</Label>
+      <Stack horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 5 }}>
+        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Hub</Label>
+        <Dropdown
+          options={HubNameOption}
+          styles={dropdownStylesHubandPeriod}
+          onChange={handleDropdownChange_Hub}
+        // selectedKey={selectedKeyMarket}
+        // defaultSelectedKey={"ALL"}
+        />
+       {HubNameOptionValue!=="ALL" && <>
+        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Market</Label>
         <Dropdown
           options={marketNameOption}
           styles={dropdownStyles}
           onChange={handleDropdownChange_Market}
           // selectedKey={selectedKeyMarket}
           defaultSelectedKey={"ALL"}
+          disabled={HubNameOptionValue==="ALL"}
         />
-
-        {selectedKeyMarket && <Label>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>}
+</>}
+        {/* {selectedKeyMarket && <Label>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>} */}
       </Stack>
       {/* <Stack style={{marginLeft:30}}>
           This is for Test
@@ -1098,7 +1167,7 @@ const fetchVcadsCount = async () => {
           color: !isDisabled1 && '#fff',
           background: !isDisabled1 && '#00829B'
         }} disabled={isDisabled1} onClick={() => {
-          if(error) {
+          if (error) {
             showModalError()
           } else {
             handleCreateFolder()
@@ -1138,7 +1207,7 @@ const fetchVcadsCount = async () => {
           <h2 className={classNames.header}>Warning</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-          A Summary File for the selected Period or Market already exists. Therefore, the new file name will include a suffix with its version number for recognition purposes.</p>
+            A Summary File for the selected Period or Market already exists. Therefore, the new file name will include a suffix with its version number for recognition purposes.</p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModal}>No</DefaultButton>
@@ -1186,8 +1255,8 @@ const fetchVcadsCount = async () => {
                     </li>
                   ))}
             </ul>
-            <p className={classNames.paragraph}>
-            Note: Request successfully accepted. The email will be sent in a few minutes.</p>
+            {/* <p className={classNames.paragraph}>
+              Note: Request successfully accepted. The email will be sent in a few minutes.</p> */}
           </div>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
@@ -1245,11 +1314,11 @@ const fetchVcadsCount = async () => {
             {error}</p>
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={() => {
-               hideModalError()
-               
-               setError("")
-              
-          
+              hideModalError()
+
+              setError("")
+
+
               handleCreateFolder(true)
             }}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={() => {
