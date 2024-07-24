@@ -173,14 +173,15 @@ export default memo(function App() {
     'V110 W VOCOM': number;
     'V110 W/O VOCOM': number;
     HWI:number;
-    Period:string
+    Period:string;
     // 根据你的需求添加更多字段
+    Hub:string;
   }
   // 多个项目提交
   async function addMultipleItems(Vcadlist:VcadItem[]) {
     try {
       const [batchedSP, execute] = sp.batched();
-      const list = batchedSP.web.lists.getByTitle("VCAD Summary");
+      const list = batchedSP.web.lists.getByTitle("Tech Tool Master");
 
       let res: any[] = [];
 
@@ -195,7 +196,8 @@ export default memo(function App() {
           V110WVOCOM:item["V110 W VOCOM"],
           V110W_x002f_OVOCOM:item["V110 W/O VOCOM"],
           HWI:item.HWI,
-          Period:item.Period
+          Period:item.Period,
+          Hub:item.Hub
 
 
           // Add other fields as needed
@@ -256,7 +258,7 @@ export default memo(function App() {
   
   async function deleteItemsByPeriod(periodValue: string) {
     try {
-      const listTitle = "VCAD Summary";
+      const listTitle = "Tech Tool Master";
       const itemsToDelete = await getAllItemsByPeriod(listTitle, periodValue);
   
       if (itemsToDelete.length === 0) {
@@ -488,37 +490,80 @@ export default memo(function App() {
     })
     findmarket(order)
   }
-// 定义更新方法
-const updateResultsWithMarkets = (results: any[], marketDealerMapping: { [market: string]: string[] }) => {
+  // 定义更新方法
+const updateResultsWithMarkets = (results: any[], marketDealerMapping: { [market: string]: { partnerIDs: string[], hubs: string[] } }) => {
   results.forEach(result => {
     for (const market in marketDealerMapping) {
-      if (marketDealerMapping[market].includes(result.PartnerID)) {
+      if (marketDealerMapping[market].partnerIDs.includes(result.PartnerID)) {
         result.Market = market;
         result.Period = selectedKey;
+        result.Hub = marketDealerMapping[market].hubs[0]; // 如果一个市场有多个Hub，可以根据需求调整逻辑
         break;
       }
     }
   });
-  console.log("res",results)
+  console.log("res", results);
   return results;
-};
-function findmarket (detail:any){
-    console.log("Main", detail)
-    // 按 Market 分组，并提取 PartnerID 列表
-    const groupedByMarket = detail.reduce((acc: any, item: any) => {
+}
+// // 定义更新方法
+// const updateResultsWithMarkets = (results: any[], marketDealerMapping: { [market: string]: string[] }) => {
+//   results.forEach(result => {
+//     for (const market in marketDealerMapping) {
+//       if (marketDealerMapping[market].includes(result.PartnerID)) {
+//         result.Market = market;
+//         result.Period = selectedKey;
+//         // result.Hub = marketDealerMapping[market].Hub[0];
+//         break;
+//       }
+//     }
+//   });
+//   console.log("res",results)
+//   return results;
+// };
+// function findmarket (detail:any){
+//     console.log("Main", detail)
+//     // 按 Market 分组，并提取 PartnerID 列表
+//     const groupedByMarket = detail.reduce((acc: any, item: any) => {
+//       if (!acc[item.Market]) {
+//         acc[item.Market] = [];
+//       }
+//       // 确保 PartnerID 不重复
+//       if (!acc[item.Market].includes(item.PartnerID)) {
+//         acc[item.Market].push(item.PartnerID);
+//       }
+//       return acc;
+//     }, {});
+//     console.log('group', groupedByMarket);
+//     setgroupedByMarketlist(groupedByMarket)
+//     // updateResultsWithMarkets(data,groupedByMarket)
+//   }
+function findmarket(detail:any) {
+  console.log("Main", detail);
+  
+  // 按 Market 分组，并提取 PartnerID 和 Hub 列表
+  const groupedByMarket = detail.reduce((acc:any, item:any) => {
       if (!acc[item.Market]) {
-        acc[item.Market] = [];
+          acc[item.Market] = {
+              partnerIDs: [],
+              hubs: []
+          };
       }
       // 确保 PartnerID 不重复
-      if (!acc[item.Market].includes(item.PartnerID)) {
-        acc[item.Market].push(item.PartnerID);
+      if (!acc[item.Market].partnerIDs.includes(item.PartnerID)) {
+          acc[item.Market].partnerIDs.push(item.PartnerID);
+      }
+      // 确保 Hub 不重复
+      if (!acc[item.Market].hubs.includes(item.Hub)) {
+          acc[item.Market].hubs.push(item.Hub);
       }
       return acc;
-    }, {});
-    console.log('group', groupedByMarket);
-    setgroupedByMarketlist(groupedByMarket)
-    // updateResultsWithMarkets(data,groupedByMarket)
-  }
+  }, {});
+  
+  console.log('group', groupedByMarket);
+  setgroupedByMarketlist(groupedByMarket);
+  // updateResultsWithMarkets(data,groupedByMarket)
+}
+
   useEffect(() => {
     initData().then(res => res).catch(err => err)
   }, [])

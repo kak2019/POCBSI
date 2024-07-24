@@ -159,6 +159,7 @@ export default memo(function App() {
   // Hub 选项
   const [HubNameOption, setHubNameOption] = React.useState<IDropdownOption[]>()
   const [HubNameOptionValue, setHubNameOptionValue] = React.useState<string>("")
+  const [isModalOpenNote, setIsModalOpenNote] = React.useState<boolean>(false)
 
   const handleDropdownChange_Market = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
     if (item) {
@@ -167,7 +168,12 @@ export default memo(function App() {
   };
   const handleDropdownChange_Hub = (event: React.FormEvent<HTMLDivElement>, item?: IDropdownOption): void => {
     if (item) {
-      setMarketNameOption(allCountryandHub.filter(i=>item.key === i.Hub).map(i=>({key:i.market,text:i.market})))
+      const markets = allCountryandHub.filter(i=>item.key === i.Hub).map(i=>({key:i.market,text:i.market}))
+      markets.unshift({
+        key: 'ALL',
+        text: 'ALL'
+      })
+      setMarketNameOption(markets)
       setHubNameOptionValue(item.text)
       if(item.text ==="ALL"){
         const value = doesFolderExist("Shared Documents/", selectedKey).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
@@ -493,6 +499,8 @@ export default memo(function App() {
     if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL") {
       console.log(selectedKeyMarket, "erer")
       selectCountry = allCountry.filter(country => country === selectedKeyMarket)
+    } else {
+      selectCountry = allCountry.filter(country => marketNameOption.some(val => val.text === country))
     }
 
     // 遍历所有国家
@@ -1059,6 +1067,7 @@ export default memo(function App() {
   };
   const submitform = () => {
     if (submiting) return
+    setIsModalOpenNote(true)
     setSubmiting(true)
     let a = hubinfosp.filter((item) => {
       if (selectedKeyMarket === "ALL") {
@@ -1069,9 +1078,9 @@ export default memo(function App() {
     })
     // console.log("aaaaa", a)
     const request = {
-      Hub: HubNameOptionValue === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
+      Hub: HubNameOptionValue === "ALL" ? "All Hub" : selectedKeyMarket ==="ALL"? HubNameOptionValue: allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub,
       FileMainLink: filelink,
-
+      Period:selectedKey
     }
 
     const sp = spfi(getSP());
@@ -1097,7 +1106,10 @@ export default memo(function App() {
     let filelink;
     if (HubNameOptionValue === "ALL") {
       filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/`
-    } else {
+    }else if(selectedKeyMarket ==="ALL" && HubNameOptionValue !== "ALL"){
+      filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${HubNameOptionValue}/`
+    }
+     else {
       filelink = `${Site_Relative_Links}/Shared Documents/${selectedKey}/${HubNameOptionValue === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}`
     }
     setfilelink(filelink)
@@ -1234,9 +1246,15 @@ export default memo(function App() {
               {
                 hubinfosp
                   .filter((item) => {
-                    if (selectedKeyMarket === "ALL") {
-                      return true;
-                    } else {
+                    if(HubNameOptionValue==="ALL"){
+                      return true
+                    }
+                    else if (selectedKeyMarket === "ALL") {
+                      //return true;
+                      console.log(allCountryandHub,"Allllll",item.Hub ===  HubNameOptionValue)
+                      return item.Hub ===  HubNameOptionValue;
+                    }
+                    else {
                       return item.Hub === allCountryandHub.find((hub) => hub.market === selectedKeyMarket)?.Hub;
                     }
                   }).map((hubInfo, index) => (
@@ -1261,6 +1279,26 @@ export default memo(function App() {
           <div className={classNames.buttonContainer}>
             <PrimaryButton className={classNames.primaryButton} onClick={submitform}>Yes</PrimaryButton>
             <DefaultButton className={classNames.button} onClick={hideModalhub}>No</DefaultButton>
+          </div>
+        </Modal>
+        <Modal
+          titleAriaId={"confirm"}
+          isOpen={isModalOpenNote}
+          // onDismiss={hideModal}
+          isBlocking={false}
+          containerClassName={classNames.modal}
+        // dragOptions={isDraggable ? dragOptions : undefined}
+        >
+          {/* <Stack horizontalAlign="center" > */}
+          <h2 className={classNames.header}>Notice</h2>
+          {/* </Stack> */}
+          <p className={classNames.paragraph}>
+            Please be aware that there might be a few minutes delay to send the email.</p>
+          <div className={classNames.buttonContainer}>
+            {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
+            <DefaultButton className={classNames.primaryButton} onClick={() => {
+              setIsModalOpenNote(false)
+            }}>OK</DefaultButton>
           </div>
         </Modal>
         <Modal
