@@ -670,7 +670,7 @@ export default memo(function App() {
     try {
       let items: any[] = [];
       let pager = await sp.web.lists
-        .getByTitle("VCAD Summary")
+        .getByTitle("Tech Tool Master")
         .items.select("Market", "S410WVOCOM", "S410W_x002f_OVOCOM", "V110WVOCOM", "V110W_x002f_OVOCOM", "HWI", "Period", "Partner_x0020_ID")
         .top(5000) // 每页最大条目数
         .getPaged();
