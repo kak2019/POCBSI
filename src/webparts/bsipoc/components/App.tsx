@@ -149,7 +149,8 @@ export default memo(function App() {
       setSelectedKeyPeriod(item.key as string);
       setSelectedKey(item.text as string);
       //const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
-      
+      setHubNameOptionValue(null);
+    setSelectedKeyMarket("ALL");
     }
 
   };
@@ -496,10 +497,12 @@ export default memo(function App() {
     const buffer = await sp.web.getFileByServerRelativePath(Site_Relative_Links + "/BSITemplate/BSITemplate.xlsx").getBuffer();
     console.log(buffer, "buffer")
     let selectCountry = allCountry.slice(0)
-    if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL") {
+    if (selectedKeyMarket !== "" && selectedKeyMarket !== "ALL" && HubNameOptionValue !=="ALL") {
       console.log(selectedKeyMarket, "erer")
       selectCountry = allCountry.filter(country => country === selectedKeyMarket)
-    } else {
+    }else if(HubNameOptionValue==="ALL") {
+      selectCountry  =  allCountry
+    }else {
       selectCountry = allCountry.filter(country => marketNameOption.some(val => val.text === country))
     }
 
@@ -1115,7 +1118,7 @@ export default memo(function App() {
     setfilelink(filelink)
   }, [selectedKey, selectedKeyMarket,HubNameOptionValue])
 
-  const isDisabled1 = isLoading || excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === ""
+  const isDisabled1 = isLoading || excel.length === 0 || selectedKeyPeriod === null || selectedKeyPeriod === "" || HubNameOptionValue===""
   const isDisabled2 = isLoading || excel.length === 0 || HubNameOptionValue === '' || !fileExistState
 
   return (
@@ -1140,7 +1143,7 @@ export default memo(function App() {
           options={HubNameOption}
           styles={dropdownStylesHubandPeriod}
           onChange={handleDropdownChange_Hub}
-        // selectedKey={selectedKeyMarket}
+          selectedKey={HubNameOptionValue}
         // defaultSelectedKey={"ALL"}
         />
        {HubNameOptionValue!=="ALL" && <>
@@ -1251,7 +1254,7 @@ export default memo(function App() {
                     }
                     else if (selectedKeyMarket === "ALL") {
                       //return true;
-                      console.log(allCountryandHub,"Allllll",item.Hub ===  HubNameOptionValue)
+                      // console.log(allCountryandHub,"Allllll",item.Hub ===  HubNameOptionValue)
                       return item.Hub ===  HubNameOptionValue;
                     }
                     else {
@@ -1293,7 +1296,7 @@ export default memo(function App() {
           <h2 className={classNames.header}>Notice</h2>
           {/* </Stack> */}
           <p className={classNames.paragraph}>
-            Please be aware that there might be a few minutes delay to send the email.</p>
+          Request successfully accepted. The email will be sent in a few minutes.</p>
           <div className={classNames.buttonContainer}>
             {/* <PrimaryButton className={classNames.button} onClick={() => handleCreateFolder(true)}>Yes</PrimaryButton> */}
             <DefaultButton className={classNames.primaryButton} onClick={() => {
