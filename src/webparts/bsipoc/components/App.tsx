@@ -150,7 +150,7 @@ export default memo(function App() {
       setSelectedKey(item.text as string);
       //const value = doesFolderExist("Shared Documents", item.text).then(exsit => { console.log("value", exsit); setfileExistState(exsit) })
       setHubNameOptionValue(null);
-    setSelectedKeyMarket("ALL");
+      setMarketNameOption([])
     }
 
   };
@@ -1152,7 +1152,7 @@ export default memo(function App() {
           options={marketNameOption}
           styles={dropdownStyles}
           onChange={handleDropdownChange_Market}
-          // selectedKey={selectedKeyMarket}
+          selectedKey={selectedKeyMarket}
           defaultSelectedKey={"ALL"}
           disabled={HubNameOptionValue==="ALL"}
         />
