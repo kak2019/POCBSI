@@ -408,7 +408,7 @@ export default memo(function App() {
       if (sheetId !== 3) {
         worksheet.eachRow({ includeEmpty: true }, async (row, rowNumber) => {
           row.eachCell({ includeEmpty: true }, async (cell: any, colNumber) => {
-            if (colNumber >= 6 && colNumber <= 16) {
+            if (colNumber >= 6 && colNumber <= 16 || colNumber ===3) {
               if (cell.value !== null && cell.value.toString().trim() !== "") {
                 // 尝试将单元格内容转换为数字
                 let numericValue = parseFloat(cell.value);
@@ -421,7 +421,7 @@ export default memo(function App() {
                 // 单元格内容为空或仅包含空白字符，不做改动，保留原样
                 cell.value = cell.value;
               }
-            } else if (colNumber === 5 || colNumber === 1) {
+            } else if (colNumber === 5 || colNumber === 1  ) {
               cell.value = cell.value;
             } else {
               let numericValue = parseFloat(cell.value);
