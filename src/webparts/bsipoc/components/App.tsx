@@ -7,8 +7,8 @@ import "@pnp/sp/webs";
 import "@pnp/sp/folders";
 import { DefaultButton, Label, mergeStyleSets, PrimaryButton, Stack } from "office-ui-fabric-react";
 import * as XLSX from 'xlsx';
-import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
-
+// import { Dropdown, IDropdownStyles, IDropdownOption } from '@fluentui/react/lib/Dropdown';
+import {DirectionalHint,Dropdown, IDropdownStyles, IDropdownOption} from '@fluentui/react';
 // import YearPicker from "./control/YearSelect";
 import createrFolder from "./control/CreateFolder"
 import * as Excel from 'exceljs';
@@ -41,13 +41,22 @@ const dropdownStyles: Partial<IDropdownStyles> = {
     color: '#191919', 
     border: '1px solid #454545', 
     borderRadius: '10px',
-    selectors: {
-      ':disabled': {
-        backgroundColor: '#f3f2f1', // 禁用状态下的背景颜色
-        color: '#a19f9d', // 禁用状态下的文本颜色
-        border: '1px solid #d3d3d3', // 禁用状态下的边框颜色
-      },
-    },
+    // selectors: {
+    //   ':disabled': {
+    //     backgroundColor: '#f3f2f1', // 禁用状态下的背景颜色
+    //     color: '#a19f9d', // 禁用状态下的文本颜色
+    //     border: '1px solid #d3d3d3', // 禁用状态下的边框颜色
+    //   },
+    // },
+    calloutProps :{
+      directionalHint: DirectionalHint.bottomCenter, // 控制弹出框的方向
+      styles: {
+        calloutMain: {
+          maxHeight: 50, // 设置弹出框的最大高度
+          overflowY: 'auto', // 当内容超过最大高度时显示滚动条
+        },
+    }
+    }
   },
   dropdown: { ':focus::after': { border: 'none' }, width: 180 },
   title: { border: 'none', background: 'none' }
@@ -57,8 +66,17 @@ const dropdownStylesHubandPeriod: Partial<IDropdownStyles> = {
   dropdown: { ':focus::after': { border: 'none' }, width: 180 },
   title: { border: 'none', background: 'none' }
 };
-
-
+// 控制下拉框的弹出方向
+const calloutProps = {
+  directionalHint: DirectionalHint.bottomCenter, // 控制弹出框的方向
+  directionalHintFixed: true,
+  styles: {
+    calloutMain: {
+      maxHeight: 100, // 设置弹出框的最大高度
+      overflowY: 'auto', // 当内容超过最大高度时显示滚动条
+    },
+}
+}
 export default memo(function App() {
   const [submiting, setSubmiting] = React.useState<boolean>(false)
   //modal
@@ -1134,6 +1152,7 @@ export default memo(function App() {
           options={periodNameOption}
           styles={dropdownStylesHubandPeriod}
           onChange={handleDropdownChange_Period}
+          calloutProps={calloutProps} // 应用自定义的 Callout 属性
         />
         {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
       </Stack>
@@ -1144,6 +1163,7 @@ export default memo(function App() {
           styles={dropdownStylesHubandPeriod}
           onChange={handleDropdownChange_Hub}
           selectedKey={HubNameOptionValue}
+          calloutProps={calloutProps} // 应用自定义的 Callout 属性
         // defaultSelectedKey={"ALL"}
         />
       
@@ -1173,6 +1193,7 @@ export default memo(function App() {
           selectedKey={selectedKeyMarket}
           defaultSelectedKey={"ALL"}
           disabled={HubNameOptionValue==="ALL"}
+          calloutProps={calloutProps} // 应用自定义的 Callout 属性
         />
 </>}
 </Stack>
