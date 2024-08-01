@@ -1142,12 +1142,12 @@ export default memo(function App() {
   return (
     //className={styles.uploadPage}
     <div >
-      <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1>
+      {/* <h1 style={{ margin: 10 }}>Business System Cost Calculation</h1> */}
 
 
 
-      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 5 }}>
-        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Period</Label>
+      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 1 }}>
+        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Period</Label>
         <Dropdown
           options={periodNameOption}
           styles={dropdownStylesHubandPeriod}
@@ -1157,7 +1157,7 @@ export default memo(function App() {
         {selectedKeyPeriod && <Label>Period Details: {selectedKeyPeriod}</Label>}
       </Stack>
       <Stack horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 5 }}>
-        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Hub</Label>
+        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Hub</Label>
         <Dropdown
           options={HubNameOption}
           styles={dropdownStylesHubandPeriod}
@@ -1185,7 +1185,7 @@ export default memo(function App() {
 </Stack> */}
 <Stack  horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 5 }}>
 {HubNameOptionValue!=="ALL" && <>
-        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Market</Label>
+        <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Market</Label>
         <Dropdown
           options={marketNameOption}
           styles={dropdownStyles}
