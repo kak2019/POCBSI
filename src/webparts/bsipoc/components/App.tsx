@@ -53,8 +53,8 @@ const dropdownStyles: Partial<IDropdownStyles> = {
   title: { border: 'none', background: 'none' }
 };
 const dropdownStylesHubandPeriod: Partial<IDropdownStyles> = {
-  root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 130, marginRight: 20, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
-  dropdown: { ':focus::after': { border: 'none' }, width: 130 },
+  root: { background: '#fff', display: 'flex', flexShrink: 0, alignItems: 'center', width: 180, marginRight: 20, fontSize: '14px', height: 30, color: '#191919', border: '1px solid #454545', borderRadius: '10px' },
+  dropdown: { ':focus::after': { border: 'none' }, width: 180 },
   title: { border: 'none', background: 'none' }
 };
 
@@ -1146,17 +1146,7 @@ export default memo(function App() {
           selectedKey={HubNameOptionValue}
         // defaultSelectedKey={"ALL"}
         />
-       {HubNameOptionValue!=="ALL" && <>
-        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Market</Label>
-        <Dropdown
-          options={marketNameOption}
-          styles={dropdownStyles}
-          onChange={handleDropdownChange_Market}
-          selectedKey={selectedKeyMarket}
-          defaultSelectedKey={"ALL"}
-          disabled={HubNameOptionValue==="ALL"}
-        />
-</>}
+      
         {/* {selectedKeyMarket && <Label>Hub Details: {selectedKeyMarket === "ALL" ? "All Hub" : allCountryandHub.find(hub => hub.market === selectedKeyMarket)?.Hub}</Label>} */}
       </Stack>
       {/* <Stack style={{marginLeft:30}}>
@@ -1173,6 +1163,19 @@ export default memo(function App() {
         />
 
 </Stack> */}
+<Stack  horizontal horizontalAlign="start" verticalAlign="center" style={{ marginLeft: 10, marginBottom: 5 }}>
+{HubNameOptionValue!=="ALL" && <>
+        <Label style={{ width: 80, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Market</Label>
+        <Dropdown
+          options={marketNameOption}
+          styles={dropdownStyles}
+          onChange={handleDropdownChange_Market}
+          selectedKey={selectedKeyMarket}
+          defaultSelectedKey={"ALL"}
+          disabled={HubNameOptionValue==="ALL"}
+        />
+</>}
+</Stack>
       <Stack verticalAlign="start" style={{ marginTop: 20 }}>
         <PrimaryButton style={{
           marginTop: 15,
