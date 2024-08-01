@@ -1146,7 +1146,7 @@ export default memo(function App() {
 
 
 
-      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 1 }}>
+      <Stack horizontal horizontalAlign="start" style={{ marginLeft: 10, marginBottom: 5 }}>
         <Label style={{ width: 100, whiteSpace: 'nowrap', flexShrink: 0, marginRight: 10 }}>Select Period</Label>
         <Dropdown
           options={periodNameOption}
