@@ -634,8 +634,21 @@ function findmarket(detail:any) {
                   error
                     ? <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{error}</div></div>
                     : <div className={styles.subTitle}>*Please contain VCAD Data</div>
-                }
-                <Upload
+                }<Stack horizontal>
+                 <Button style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '13px 34px',
+                    fontSize: '16px',
+                    borderRadius: '6px',
+                    border: '1px solid #D6D3D0',
+                    background: '#FFF'
+                  }} icon={<FileSvg />}
+
+                  >DownLoad Template</Button>
+                   <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                  <Upload
                   beforeUpload={() => false}
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
@@ -655,6 +668,8 @@ function findmarket(detail:any) {
 
                   >Select files</Button>
                 </Upload>
+                </div>
+                </Stack>
                 {
                   fileWarning && <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{fileWarning}</div></div>
                 }
