@@ -629,12 +629,13 @@ function findmarket(detail:any) {
                 </Stack>
 
               </Stack>
-              : <Stack className={styles.uploadBox} verticalAlign="center">
+              : <Stack className={styles.uploadBox} verticalAlign="center" style={{ width: '100%', alignItems: 'center' }}>
                 {
                   error
                     ? <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{error}</div></div>
-                    : <div className={styles.subTitle}>*Please contain VCAD Data</div>
-                }<Stack horizontal style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    : <div className={styles.subTitle} style={{ marginBottom: '10px' }}>*Please contain VCAD Data</div>
+                }
+                <Stack horizontal style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                  <Button style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -646,8 +647,9 @@ function findmarket(detail:any) {
                     background: '#FFF'
                   }} icon={<FileSvg />}
 
-                  >DownLoad Template</Button>
-                   <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                  >DownLoad Template
+                  </Button>
+                <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', width: '50%' }}>
                   <Upload
                   beforeUpload={() => false}
                   accept=".xlsx, .xls"
