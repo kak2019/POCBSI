@@ -634,7 +634,7 @@ function findmarket(detail:any) {
                   error
                     ? <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{error}</div></div>
                     : <div className={styles.subTitle}>*Please contain VCAD Data</div>
-                }<Stack horizontal>
+                }<Stack horizontal style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                  <Button style={{
                     display: 'flex',
                     alignItems: 'center',
