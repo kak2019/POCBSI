@@ -635,42 +635,44 @@ function findmarket(detail:any) {
                     ? <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{error}</div></div>
                     : <div className={styles.subTitle} style={{ marginBottom: '10px' }}>*Please contain VCAD Data</div>
                 }
-                <Stack horizontal style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                 <Button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '13px 34px',
-                    fontSize: '16px',
-                    borderRadius: '6px',
-                    border: '1px solid #D6D3D0',
-                    background: '#FFF'
-                  }} icon={<FileSvg />}
+                <Stack horizontal style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <div style={{ display: 'inline-block', position: 'relative' }}>
+                    <Button style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 10px',
+                        fontSize: '16px',
+                        borderRadius: '6px',
+                        border: '1px solid #D6D3D0',
+                        background: '#FFF',
+                        position: 'absolute',
+                        right: '200px'
+                      }} icon={<FileSvg />}
 
-                  >DownLoad Template
-                  </Button>
-                <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', width: '50%' }}>
-                  <Upload
-                  beforeUpload={() => false}
-                  accept=".xlsx, .xls"
-                  onChange={handleFileUpload}
-                  maxCount={1}
-                  showUploadList={false}
-                >
-                  <Button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '13px 34px',
-                    fontSize: '16px',
-                    borderRadius: '6px',
-                    border: '1px solid #D6D3D0',
-                    background: '#FFF'
-                  }} icon={<FileSvg />}
+                      >DownLoad Template
+                    </Button>
+                    <Upload
+                    beforeUpload={() => false}
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                    maxCount={1}
+                    showUploadList={false}
+                  >
+                    <Button style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '13px 34px',
+                      fontSize: '16px',
+                      borderRadius: '6px',
+                      border: '1px solid #D6D3D0',
+                      background: '#FFF'
+                    }} icon={<FileSvg />}
 
-                  >Select files</Button>
-                </Upload>
-                </div>
+                    >Select files</Button>
+                  </Upload>
+                  </div>
                 </Stack>
                 {
                   fileWarning && <div style={{ display: 'flex', alignItems: 'center' }}><Error /> <div className={styles.subTitle} style={{ color: '#E0402E', marginLeft: '8px' }}>{fileWarning}</div></div>
